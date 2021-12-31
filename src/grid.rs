@@ -10,8 +10,7 @@ use std::{
 };
 
 use glam::{IVec2, UVec2, Vec2};
-
-use crate::view::GridView;
+use itertools::Itertools;
 
 /// A dense sized grid of [T].
 /// 
@@ -39,11 +38,6 @@ impl<T: Clone> Grid<T> {
         Grid::new(T::default(), size)
     }
 
-    /// Returns a rectangular, read-only [GridView] into the grid.
-    pub fn view<'a, RANGE: RangeBounds<(i32,i32)>>(&'a self, range: RANGE) -> GridView<'a, T> {
-        GridView::new(range, self)
-    }
-
     /// An iterator over all elements in the grid.
     #[inline]
     pub fn iter(&self) -> Iter<T> {
@@ -56,29 +50,29 @@ impl<T: Clone> Grid<T> {
         self.data.iter_mut()
     }
 
-    /// An iterator that enumerates the 2D position of every element in the grid.
-    /// 
-    /// Yields `(IVec2,T)`, where the `IVec2` is the grid coordinate of the element being iterated. 
-    /// It begins at the bottom left `(0,0)` and ends at the top right `(size - 1, size - 1)`.
-    #[inline]
-    pub fn iter_2d(&self) -> Iter2d<T> {
-        Iter2d {
-            width: self.width() as i32,
-            iter: self.data.iter().enumerate(),
-        }
-    }
+    // /// An iterator that enumerates the 2D position of every element in the grid.
+    // /// 
+    // /// Yields `(IVec2,T)`, where the `IVec2` is the grid coordinate of the element being iterated. 
+    // /// It begins at the bottom left `(0,0)` and ends at the top right `(size - 1, size - 1)`.
+    // #[inline]
+    // pub fn iter_2d(&self) -> Iter2d<T> {
+    //     Iter2d {
+    //         width: self.width() as i32,
+    //         iter: self.data.iter().enumerate(),
+    //     }
+    // }
 
-    /// Returns a mutable iterator that enumerates the 2D position of every element in the grid.
-    /// 
-    /// Yields `(IVec2,&mut T)`, where the `IVec2` is the grid coordinate of the element being iterated. 
-    /// It begins at the bottom left `(0,0)` and ends at the top right `(size - 1, size - 1)`.
-    #[inline]
-    pub fn iter_2d_mut(&mut self) -> Iter2dMut<T> {
-        Iter2dMut {
-            width: self.width() as i32,
-            iter_mut: self.data.iter_mut().enumerate(),
-        }
-    }
+    // /// Returns a mutable iterator that enumerates the 2D position of every element in the grid.
+    // /// 
+    // /// Yields `(IVec2,&mut T)`, where the `IVec2` is the grid coordinate of the element being iterated. 
+    // /// It begins at the bottom left `(0,0)` and ends at the top right `(size - 1, size - 1)`.
+    // #[inline]
+    // pub fn iter_2d_mut(&mut self) -> Iter2dMut<T> {
+    //     Iter2dMut {
+    //         width: self.width() as i32,
+    //         iter_mut: self.data.iter_mut().enumerate(),
+    //     }
+    // }
 
     /// An iterator over a single row of the grid.
     /// 
@@ -149,7 +143,7 @@ impl<T: Clone> Grid<T> {
     #[inline]
     pub fn pos_from_pivot(&self, pos: (i32, i32), pivot: Pivot) -> IVec2 {
         let tr = self.pivot_position(Pivot::TopRight);
-        let pivot_offset = (tr.as_f32() * pivot.normalized()).as_i32();
+        let pivot_offset = (tr.as_vec2() * pivot.normalized()).as_ivec2();
         IVec2::from(pos) * pivot.axis() + pivot_offset
     }
 
@@ -178,7 +172,7 @@ impl<T: Clone> Grid<T> {
     /// Converts a 1d index to it's corresponding grid position.
     #[inline(always)]
     pub fn index_to_upos(&self, index: usize) -> UVec2 {
-        self.index_to_pos(index).as_u32()
+        self.index_to_pos(index).as_uvec2()
     }
 
     /// Returns the index of the top row.
@@ -215,7 +209,7 @@ impl<T: Clone> Grid<T> {
             Pivot::TopRight => IVec2::new(self.right_index() as i32, self.top_index() as i32),
             Pivot::Center => {
                 let tr = self.pivot_position(Pivot::TopRight); 
-                (tr.as_f32() / 2.0).as_i32()
+                (tr.as_vec2() / 2.0).as_ivec2()
             },
             Pivot::BottomLeft => IVec2::ZERO,
             Pivot::BottomRight => IVec2::new(self.right_index() as i32, 0),
@@ -224,7 +218,7 @@ impl<T: Clone> Grid<T> {
 
 
     pub fn is_in_bounds(&self, pos: IVec2) -> bool {
-        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_i32()).all()
+        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
     }
 
     #[allow(dead_code)]
@@ -232,6 +226,58 @@ impl<T: Clone> Grid<T> {
         debug_assert!(self.is_in_bounds(pos), 
             "Position {} is out of grid bounds {}", pos, self.size());
     }
+
+    /// An iterator over a rectangular portion of the grid defined by the given range.
+    /// 
+    /// Yields `(IVec2, &T)`, where `IVec2` is the corresponding position of the value in the grid.
+    pub fn rect_iter<RANGE: RangeBounds<(i32,i32)>>(&self, range: RANGE) -> impl Iterator<Item = (IVec2, &T)> {
+        let (min,max) = ranges_to_min_max(range, self.size().as_ivec2());
+        (min.y..=max.y).cartesian_product(
+         min.x..=max.x).map(
+            |(y,x)| ((IVec2::new(x,y)), &self[(x as u32,y as u32)])
+        )
+    }
+
+    /// Returns an iterator which enumerates the 2d position of every value in the grid.
+    /// 
+    /// Yields `(IVec2, &T)`, where `IVec2` is the corresponding position of the value in the grid.
+    pub fn iter_2d(&self) -> impl Iterator<Item = (IVec2, &T)> {
+        (0..self.height())
+        .cartesian_product(0..self.width())
+        .map(|(y,x)| IVec2::new(x as i32,y as i32))
+        .zip(self.data.iter())
+    }
+
+
+    /// Returns a mutable iterator which enumerates the 2d position of every value in the grid.
+    /// 
+    /// Yields `(IVec2, &mut T)`, where `IVec2` is the corresponding position of the value in the grid.
+    pub fn iter_2d_mut(&mut self) -> impl Iterator<Item = (IVec2, &mut T)> {
+        (0..self.height())
+        .cartesian_product(0..self.width())
+        .map(|(y,x)| IVec2::new(x as i32,y as i32))
+        .zip(self.data.iter_mut())
+    }
+
+}
+
+fn ranges_to_min_max<RANGE: RangeBounds<(i32,i32)>>(range: RANGE, max: IVec2) -> (IVec2, IVec2) {
+    let min = match range.start_bound() {
+        std::ops::Bound::Included((x,y)) => IVec2::new(*x,*y),
+        std::ops::Bound::Excluded((x,y)) => IVec2::new(*x,*y),
+        std::ops::Bound::Unbounded => IVec2::ZERO,
+    };
+
+    let max = match range.end_bound() {
+        std::ops::Bound::Included((x,y)) => IVec2::new(*x,*y),
+        std::ops::Bound::Excluded((x,y)) => IVec2::new(x - 1, y - 1),
+        std::ops::Bound::Unbounded => max,
+    };
+
+    debug_assert!(min.cmpge(IVec2::ZERO).all() && min.cmplt(max).all());
+    debug_assert!(max.cmple(max).all());
+
+    (min,max)
 }
 
 impl<T: Clone> Index<(u32,u32)> for Grid<T> {
@@ -297,54 +343,6 @@ impl<T: Clone> IndexMut<UVec2> for Grid<T> {
     fn index_mut(&mut self, index: UVec2) -> &mut Self::Output {
         let index = self.upos_to_index(index.into());
         &mut self.data[index]
-    }
-}
-
-pub struct Iter2d<'a, T: Clone> {
-    width: i32,
-    iter: Enumerate<Iter<'a, T>>,
-}
-
-impl<'a, T: Clone> Iterator for Iter2d<'a, T> {
-    type Item = (IVec2, &'a T);
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.iter.next() {
-            Some((i,v)) => {
-                let i = i as i32;
-                let x = i % self.width;
-                let y = i / self.width;
-                Some((IVec2::new(x,y), v))
-            },
-            None => None,
-        };
-
-        next
-    }
-}
-
-pub struct Iter2dMut<'a, T: Clone> {
-    width: i32,
-    iter_mut: Enumerate<IterMut<'a, T>>,
-}
-
-impl<'a, T: Clone> Iterator for Iter2dMut<'a, T> {
-    type Item = (IVec2, &'a mut T);
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        let next = match self.iter_mut.next() {
-            Some((i,v)) => {
-                let i = i as i32;
-                let x = i % self.width;
-                let y = i / self.width;
-                Some((IVec2::new(x,y), v))
-            },
-            None => None,
-        };
-
-        next
     }
 }
 
@@ -429,19 +427,12 @@ mod tests {
         grid[(3,1)] = 10;
         grid[(4,2)] = 20;
 
-        for (p,v) in grid.iter_2d() {
-            if p.x == 0 && p.y == 0 {
-                assert_eq!(*v, 5);
-            }
+        let vec: Vec<_> = grid.iter_2d().collect();
 
-            if p.x == 3 && p.y == 1 {
-                assert_eq!(*v, 10);
-            }
-
-            if p.x == 4 && p.y == 2 {
-                assert_eq!(*v, 20);
-            }
-        }
+        assert_eq!( vec.len(), 5 * 3);
+        assert_eq!( *vec[grid.pos_to_index((0,0))].1, 5 );
+        assert_eq!( *vec[grid.pos_to_index((3,1))].1, 10 );
+        assert_eq!( *vec[grid.pos_to_index((4,2))].1, 20 );
 
         let mut iter = grid.iter_2d();
         let (p,_) = iter.next().unwrap();
@@ -552,22 +543,16 @@ mod tests {
         grid[(2,2)] = 5;
         grid[(4,4)] = 10;
 
-        let view = grid.view((2,2)..=(4,4));
+        let iter = grid.rect_iter((2,2)..=(4,4));
+        let vec: Vec<_> = iter.collect();
 
-        assert_eq!(view.iter().len(), 9);
+        assert_eq!(vec.len(), 9);
+        assert_eq!(*vec[0].1, 5);
+        assert_eq!(*vec[8].1, 10);
 
-        assert_eq!(view[0], 5);
-        assert_eq!(view[(0,0)], 5);
-        
-        assert_eq!(view[8], 10);
-        assert_eq!(view[(2,2)], 10);
-
-        let mut iter = view.iter_2d();
+        let mut iter = grid.rect_iter((2,2)..=(4,4));
 
         let (p, _) = iter.next().unwrap();
-
-        assert_eq!(view.iter().len(), 9);
-
         assert_eq!(p, IVec2::new(2,2));
         assert_eq!(iter.skip(7).next().unwrap().0, IVec2::new(4,4));
     }
