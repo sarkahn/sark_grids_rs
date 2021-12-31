@@ -1,7 +1,9 @@
 pub mod grid;
 pub mod world_grid;
+pub mod sparse_grid;
 
 pub use grid::Grid;
+pub use sparse_grid::SparseGrid;
 pub use world_grid::WorldGrid;
 
 use glam::{IVec2, Vec2};
