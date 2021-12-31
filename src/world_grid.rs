@@ -1,3 +1,5 @@
+//! A utility for translating to/from grid points and world space.
+
 use itertools::Itertools;
 
 use glam::{Vec2, IVec2, UVec2};
@@ -9,10 +11,9 @@ use crate::grid::Pivot;
 /// into world space.
 /// 
 /// You can specify a world position, size, and pivot for the grid when creating it.
-/// These will affect the grid's bounds and tile positions/centers.
+/// These will affect the grid's bounds and tile points.
 /// 
-/// A grid's [Pivot] determine's it's coordinate space. A grid with [Pivot::BottomLeft] will
-/// have local ti
+/// For a [Pivot::BottomLeft] grid the
 ///
 /// **IE:**
 ///
@@ -24,11 +25,13 @@ use crate::grid::Pivot;
 pub struct WorldGrid {
     pub world_pos: Vec2,
     size: UVec2,
+    /// Used when retrieving a tile center - accounts for centered grids.
     center_offset: Vec2,
-    // Used when retrieving a tile position - accounts for centered grids.
+    /// Used when retrieving a tile position - accounts for centered grids.
     pos_offset: Vec2,
     /// Used when translating from a grid position to an index position.
     pivot_offset: Vec2,
+    /// Axis, derived from pivot
     axis: Vec2,
 }
 
@@ -67,21 +70,7 @@ impl WorldGrid {
     pub fn origin(size: (u32, u32), pivot: Pivot) -> Self {
         WorldGrid::new((0.0, 0.0), size, pivot)
     }
-
-    /// Returns the position of the given tile in world space.
-    /// 
-    /// A tile's "position" refers to the bottom left point on the tile.
-    #[inline]
-    pub fn tile_position_world(&self, grid_pos: [i32;2]) -> Vec2 {
-        self.tile_pos(grid_pos) + self.world_pos
-    }
-
-    /// Return's the center of the given tile in world space.
-    #[inline]
-    pub fn tile_center_world(&self, grid_pos: [i32;2]) -> Vec2 {
-        self.tile_center(grid_pos) + self.world_pos
-    }
-
+        
     /// Returns the tile position of a given tile.
     /// 
     /// A tile's "position" refers to the bottom left point on the tile.
@@ -96,6 +85,20 @@ impl WorldGrid {
     pub fn tile_center(&self, grid_pos: [i32;2]) -> Vec2 {
         let grid_pos = IVec2::from(grid_pos).as_vec2();
         grid_pos + self.center_offset
+    }
+
+    /// Returns the position of the given tile in world space.
+    /// 
+    /// A tile's "position" refers to the bottom left point on the tile.
+    #[inline]
+    pub fn tile_pos_world(&self, grid_pos: [i32;2]) -> Vec2 {
+        self.tile_pos(grid_pos) + self.world_pos
+    }
+
+    /// Return's the center of the given tile in world space.
+    #[inline]
+    pub fn tile_center_world(&self, grid_pos: [i32;2]) -> Vec2 {
+        self.tile_center(grid_pos) + self.world_pos
     }
 
     /// Whether or not the given grid position is inside the grid bounds.
@@ -116,6 +119,9 @@ impl WorldGrid {
         index.cmpge(UVec2::ZERO).all() && index.cmplt(self.size()).all()
     }
 
+    /// Convert a grid point to it's corresponding 2d index.
+    /// 
+    /// Returns none if the given grid point is out of bounds.
     pub fn try_grid_to_index_2d(&self, grid_pos: [i32;2]) -> Option<UVec2> {
         let center = self.tile_center(grid_pos);
         let index = center * self.axis - self.pivot_offset;
@@ -307,12 +313,12 @@ mod test {
     fn top_right_bounds() {
         let grid = WorldGrid::origin((5,5), Pivot::TopRight);
 
-        assert!(!grid.grid_pos_in_bounds( [1,1] ));
-        // assert!(!grid.in_bounds((0,0)));
-        // assert!(grid.in_bounds((0,-1)));
-        // assert!(grid.in_bounds((-1,-2)));
-        // assert!(grid.in_bounds((-2,-3)));
-        // assert!(!grid.in_bounds((-4,-4)));
+        assert!(!grid.grid_pos_in_bounds( [ 1, 1] ));
+        assert!(!grid.grid_pos_in_bounds( [ 0, 0] ));
+        assert!(!grid.grid_pos_in_bounds( [ 0,-1] ));
+        assert!( grid.grid_pos_in_bounds( [-1,-2] ));
+        assert!( grid.grid_pos_in_bounds( [-2,-3] ));
+        assert!( grid.grid_pos_in_bounds( [-4,-4] ));
     }
 
     #[test]
