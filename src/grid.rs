@@ -12,6 +12,8 @@ use std::{
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
+use crate::{Pivot, world_grid::WorldGrid};
+
 /// A dense sized grid of [T].
 /// 
 /// This grid assumes that `[0,0]` refers to the bottom-left most tile, and 
@@ -23,7 +25,7 @@ pub struct Grid<T: Clone> {
 
 impl<T: Clone> Grid<T> {
     /// Creates a new [Grid<T>] with the given default value set for all elements.
-    pub fn new(value: T, size: (u32, u32)) -> Self {
+    pub fn new(value: T, size: [u32;2]) -> Self {
         let size = UVec2::from(size);
         let len = (size.x * size.y) as usize;
 
@@ -34,7 +36,7 @@ impl<T: Clone> Grid<T> {
     }
     
     /// Creates a new [Grid<T>] with all elements initialized to default values.
-    pub fn default(size: (u32,u32)) -> Self where T: Default {
+    pub fn default(size: [u32;2]) -> Self where T: Default {
         Grid::new(T::default(), size)
     }
 
@@ -259,6 +261,18 @@ impl<T: Clone> Grid<T> {
         .zip(self.data.iter_mut())
     }
 
+    /// Creates a [crate::world_grid::WorldGrid] from this grid with the given pivot. This can be used to translate
+    /// between grid points and world space.
+    pub fn to_world_pivot(&self, pivot: Pivot) -> WorldGrid {
+        WorldGrid::origin(self.size.into(), pivot)
+    }
+
+    /// Creates a [crate::world_grid::WorldGrid] from this grid with the default bottom left pivot. This can be used to translate
+    /// between grid points and world space.
+    pub fn to_world(&self) -> WorldGrid {
+        self.to_world_pivot(Pivot::BottomLeft)
+    }
+
 }
 
 fn ranges_to_min_max<RANGE: RangeBounds<[i32;2]>>(range: RANGE, max: IVec2) -> (IVec2, IVec2) {
@@ -346,49 +360,13 @@ impl<T: Clone> IndexMut<UVec2> for Grid<T> {
     }
 }
 
-#[derive(Clone, Copy)]
-pub enum Pivot {
-    /// +Y Down, +X Right
-    TopLeft,
-    /// +Y Down, +X Left 
-    TopRight,
-    /// +Y Up, +X Right
-    Center,
-    /// +Y Up, +X Right
-    BottomLeft,
-    /// +Y Up, +X Left
-    BottomRight,
-}
-
-impl Pivot {
-    pub fn normalized(&self) -> Vec2 {
-        match self {
-            Pivot::TopLeft => Vec2::new(0.0, 1.0),
-            Pivot::TopRight => Vec2::new(1.0, 1.0),
-            Pivot::Center => Vec2::new(0.5, 0.5),
-            Pivot::BottomLeft => Vec2::new(0.0, 0.0),
-            Pivot::BottomRight => Vec2::new(1.0, 0.0),
-        }
-    }
-
-    pub fn axis(&self) -> IVec2 {
-        match self {
-            Pivot::TopLeft => IVec2::new(1, -1),
-            Pivot::TopRight => IVec2::new(-1, -1),
-            Pivot::Center => IVec2::new(1, 1),
-            Pivot::BottomLeft => IVec2::new(1, 1),
-            Pivot::BottomRight => IVec2::new(-1, 1),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn row_iter() {
-        let mut grid = Grid::default((10,15));
+        let mut grid = Grid::default([10,15]);
 
         let chars = ['h', 'e', 'l', 'l', 'o'];
         
@@ -405,7 +383,7 @@ mod tests {
 
     #[test]
     fn column_iter() {
-        let mut grid = Grid::default((10,15));
+        let mut grid = Grid::default([10,15]);
 
         let chars = ['h', 'e', 'l', 'l', 'o'];
         
@@ -422,7 +400,7 @@ mod tests {
 
     #[test]
     fn iter_2d() {
-        let mut grid = Grid::new(0, (5,3));
+        let mut grid = Grid::new(0, [5,3]);
         grid[ [0,0] ] = 5;
         grid[ [3,1] ] = 10;
         grid[ [4,2] ] = 20;
@@ -449,7 +427,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let grid = Grid::new(5, (10,10));
+        let grid = Grid::new(5, [10,10]);
 
         let v: Vec<_> = grid.iter().collect();
 
@@ -460,7 +438,7 @@ mod tests {
 
     #[test]
     fn iter_mut() {
-        let mut grid = Grid::new(5, (10,10));
+        let mut grid = Grid::new(5, [10,10]);
 
         for i in grid.iter_mut() {
             *i = 10;
@@ -471,7 +449,7 @@ mod tests {
 
     #[test]
     fn pos_from_pivot() {
-        let grid = Grid::new(0, (5,5));
+        let grid = Grid::new(0, [5,5]);
 
         assert_eq!( [0,0], grid.pos_from_pivot( [0,0], Pivot::BottomLeft).to_array());
         assert_eq!( [1,1], grid.pos_from_pivot( [1,1], Pivot::BottomLeft).to_array());
@@ -493,7 +471,7 @@ mod tests {
         assert_eq!( [2,2], grid.pos_from_pivot( [2,2], Pivot::BottomRight).to_array());
         assert_eq!( [1,3], grid.pos_from_pivot( [3,3], Pivot::BottomRight).to_array());
 
-        let grid = Grid::new(0, (4,4));
+        let grid = Grid::new(0, [4,4]);
         
         assert_eq!( [ 1, 1], grid.pos_from_pivot( [ 0, 0], Pivot::Center).to_array());
         assert_eq!( [ 0, 0], grid.pos_from_pivot( [-1,-1], Pivot::Center).to_array());
@@ -501,7 +479,7 @@ mod tests {
 
     #[test]
     fn positions() {
-        let grid = Grid::new(0, (4,4));
+        let grid = Grid::new(0, [4,4]);
 
         assert_eq!(grid.pivot_position(Pivot::TopLeft), IVec2::new(0,3));
         assert_eq!(grid.pivot_position(Pivot::TopRight), IVec2::new(3,3));
@@ -510,7 +488,7 @@ mod tests {
         assert_eq!(grid.pivot_position(Pivot::Center), IVec2::new(1,1));
 
         
-        let grid = Grid::new(0, (5,5));
+        let grid = Grid::new(0, [5,5]);
 
         assert_eq!(grid.pivot_position(Pivot::TopLeft), IVec2::new(0,4));
         assert_eq!(grid.pivot_position(Pivot::TopRight), IVec2::new(4,4));
@@ -521,7 +499,7 @@ mod tests {
 
     #[test]
     fn rect_iter() {
-        let mut grid = Grid::<i32>::new(0, (11,15));
+        let mut grid = Grid::<i32>::new(0, [11,15]);
         
         grid[ [2,2] ] = 5;
         grid[ [4,4] ] = 10;
