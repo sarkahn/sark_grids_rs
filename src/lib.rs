@@ -4,13 +4,13 @@ pub mod world_grid;
 pub use grid::Grid;
 pub use world_grid::WorldGrid;
 
-use glam::{Vec2, IVec2};
+use glam::{IVec2, Vec2};
 
 #[derive(Clone, Copy)]
 pub enum Pivot {
     /// +Y Down, +X Right
     TopLeft,
-    /// +Y Down, +X Left 
+    /// +Y Down, +X Left
     TopRight,
     /// +Y Up, +X Right
     Center,
