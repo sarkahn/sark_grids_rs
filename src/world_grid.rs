@@ -1,4 +1,4 @@
-//! A utility for translating to/from grid points and world space.
+//! A utility for translating between grid points and world space.
 //!
 //! You can specify a world position, size, and pivot for the grid when creating it.
 //! These will affect the grid's bounds and tile points.
@@ -36,7 +36,7 @@
 //! - **Index**: The 1d index of a tile. Goes from `0` to `width * height - 1`.
 //! - **2d Index**: The 2d index of a tile in the grid. Goes from `[0,0]` to `[width-1,height-1]`.
 //! - **Tile Position**: The bottom-left point on a tile in the grid.
-//! - **Tile Center**: The center of a tile on in the grid.
+//! - **Tile Center**: The center of a tile in the grid.
 
 use itertools::Itertools;
 
@@ -44,8 +44,8 @@ use glam::{IVec2, UVec2, Vec2};
 
 use crate::Pivot;
 
-/// A sized grid with a custom pivot for translating aligned grid points
-/// into world space.
+/// A sized grid with a custom pivot for translating between aligned grid points
+/// and world space.
 pub struct WorldGrid {
     pub world_pos: Vec2,
     size: UVec2,

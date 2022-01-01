@@ -2,6 +2,12 @@
 name = "sark_grids"
 version = "0.1.0"
 edition = "2021"
+authors = ["sark"]
+homepage = "https://github.com/sarkahn/sark_grids_rs"
+repository = "https://github.com/sarkahn/sark_grids_rs"
+license = "MIT"
+readme = "README.md"
+keywords = ["2d", "grid", "sparse_grid"]
 
 [dependencies]
 glam = { version = "0.20.0" }

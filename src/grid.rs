@@ -1,4 +1,5 @@
-//! A 2d dense grid of [T].
+//! A grid that stores it's internal data in a `Vec`. The size of the grid is constant
+//! and elements cannot be removed, only changed. Provides very fast iteration and access speed.
 //!
 //! Elements can be inserted and accessed via their 1d index, 2d index, or
 //! read/modified via iterators.
@@ -33,7 +34,7 @@ use itertools::Itertools;
 
 use crate::{world_grid::WorldGrid, Pivot};
 
-/// A dense sized grid of [T].
+/// A dense sized grid that stores it's elements in a `Vec`.
 ///
 /// This grid assumes that `[0,0]` refers to the bottom-left most tile, and
 /// `[width -1, height -1]` refers to the top-right-most tile.

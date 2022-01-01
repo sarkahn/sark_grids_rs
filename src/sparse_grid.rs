@@ -1,4 +1,6 @@
-//! A 2d sparse grid of [T].
+//! A grid that stores it's internal data in a `BTreeMap`. Elements don't take up any memory until
+//! they're inserted, and can be removed as needed, but iteration and access speed will be slower 
+//! than a `Grid` for large full grids.
 //!
 //! Elements can be inserted and accessed via their 1d index or 2d index, or
 //! read/modified via iterators.
@@ -30,7 +32,7 @@ use glam::{IVec2, UVec2};
 
 use crate::Pivot;
 
-/// A sparse grid of [T] that stores elements in a [BTreeMap].
+/// A sparse grid that stores elements in a [BTreeMap].
 pub struct SparseGrid<T: Clone> {
     data: BTreeMap<u32, T>,
     size: UVec2,
