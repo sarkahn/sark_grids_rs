@@ -1,4 +1,42 @@
 //! A utility for translating to/from grid points and world space.
+//! 
+//! You can specify a world position, size, and pivot for the grid when creating it.
+//! These will affect the grid's bounds and tile points.
+//!
+//! **Example Grids**
+//! 
+//! A 3x3 Pivot::Center grid:
+//! ```text
+//! |-1,-1| 0, 1| 1, 1|
+//! |-1, 0| 0, 0| 1, 0|
+//! |-1,-1| 0,-1| 1,-1|
+//! ```
+//! 
+//! A 3x3 Pivot::BottomLeft grid:
+//! ```text
+//! | 0, 2| 1, 2| 2, 2|
+//! | 0, 1| 1, 1| 2, 1|
+//! | 0, 0| 1, 0| 2, 0|
+//! ```
+//! 
+//! A 3x3 Pivot::TopRight grid:
+//! 
+//! ```text
+//! |-3,-1|-2,-1|-1,-1|
+//! |-3,-2|-2,-2|-1,-2|
+//! |-3,-3|-2,-3|-1,-3|
+//! ```
+//! 
+//! # Types of Points
+//! 
+//! The api has several different "types" of positions that can be
+//! referenced:
+//! - **World Position**: The world offset of the grid.
+//! - **Grid Position**: The local position of the grid's tiles. It's range is based on the grid's pivot.
+//! - **Index**: The 1d index of a tile. Goes from `0` to `width * height - 1`. 
+//! - **2d Index**: The 2d index of a tile in the grid. Goes from `[0,0]` to `[width-1,height-1]`.
+//! - **Tile Position**: The bottom-left point on a tile in the grid.
+//! - **Tile Center**: The center of a tile on in the grid.
 
 use itertools::Itertools;
 
@@ -8,19 +46,6 @@ use crate::Pivot;
 
 /// A sized grid with a custom pivot for translating aligned grid points
 /// into world space.
-///
-/// You can specify a world position, size, and pivot for the grid when creating it.
-/// These will affect the grid's bounds and tile points.
-///
-/// For a [Pivot::BottomLeft] grid the
-///
-/// **IE:**
-///
-/// |-1,-1| 0, 1| 1, 1|
-///
-/// |-1, 0| 0, 0| 1, 0|
-///
-/// |-1,-1| 0,-1| 1,-1|
 pub struct WorldGrid {
     pub world_pos: Vec2,
     size: UVec2,
@@ -57,8 +82,6 @@ impl WorldGrid {
             _ => Vec2::ZERO,
         };
 
-        //println!("New grid size {}, center_offset {}, axis {}, pivot_offset {}", size, center_offset, axis, pivot_offset);
-
         WorldGrid {
             world_pos,
             size,
@@ -69,7 +92,7 @@ impl WorldGrid {
         }
     }
 
-    /// Create a grid with it's world position set to the origin.
+    /// Create a grid with it's world position set to origin.
     pub fn origin(size: [u32; 2], pivot: Pivot) -> Self {
         WorldGrid::new((0.0, 0.0), size, pivot)
     }
@@ -112,10 +135,8 @@ impl WorldGrid {
     pub fn grid_pos_in_bounds(&self, grid_pos: [i32; 2]) -> bool {
         self.try_grid_to_index_2d(grid_pos).is_some()
     }
-    /// Whether or not the given grid position is inside the grid bounds.
-    ///
-    /// A grid's bounds are determined by it's pivot - a grid's pivot always
-    /// sits on the world origin.
+
+    /// Whether or not the given 2d index is inside the grid bounds.
     #[inline]
     pub fn index_2d_in_bounds(&self, index: (u32, u32)) -> bool {
         let index = UVec2::from(index);

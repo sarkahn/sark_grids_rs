@@ -1,7 +1,26 @@
-//! A dense sized grid with various utility functions.
-//!
-//! This grid assumes that `[0,0]` refers to the bottom-left most tile, and
-//! `[width -1, height -1]` refers to the top-right-most tile.
+//! A 2d dense grid of [T].
+//! 
+//! Elements can be inserted and accessed via their 1d index, 2d index, or 
+//! read/modified via iterators.
+//! 
+//! # Example 
+//! 
+//! ```
+//! use sark_grids::grid::Grid;
+//! 
+//! let mut grid = Grid::default([10,10]);
+//! 
+//! grid[0] = 'a';
+//! grid[ [1,0] ] = 'b';
+//! 
+//! assert_eq!('a', grid[0]);
+//! assert_eq!('b', grid[ [1,0] ]);
+//! 
+//! grid.insert_column_at([3,2], "hello".chars());
+//! let hello: String = grid.column_iter(3).skip(2).take(5).collect();
+//! 
+//! assert_eq!("hello", hello);
+//! ```
 
 use std::{
     iter::StepBy,
@@ -55,30 +74,6 @@ impl<T: Clone> Grid<T> {
         self.data.iter_mut()
     }
 
-    // /// An iterator that enumerates the 2D position of every element in the grid.
-    // ///
-    // /// Yields `(IVec2,T)`, where the `IVec2` is the grid coordinate of the element being iterated.
-    // /// It begins at the bottom left `[0,0]` and ends at the top right `[size - 1, size - 1]`.
-    // #[inline]
-    // pub fn iter_2d(&self) -> Iter2d<T> {
-    //     Iter2d {
-    //         width: self.width() as i32,
-    //         iter: self.data.iter().enumerate(),
-    //     }
-    // }
-
-    // /// Returns a mutable iterator that enumerates the 2D position of every element in the grid.
-    // ///
-    // /// Yields `(IVec2,&mut T)`, where the `IVec2` is the grid coordinate of the element being iterated.
-    // /// It begins at the bottom left `[0,0]` and ends at the top right `[size - 1, size - 1]`.
-    // #[inline]
-    // pub fn iter_2d_mut(&mut self) -> Iter2dMut<T> {
-    //     Iter2dMut {
-    //         width: self.width() as i32,
-    //         iter_mut: self.data.iter_mut().enumerate(),
-    //     }
-    // }
-
     /// An iterator over a single row of the grid.
     ///
     /// Goes from left to right.
@@ -97,6 +92,43 @@ impl<T: Clone> Grid<T> {
         let w = self.width() as usize;
         let i = y * w;
         self.data[i..i + w].iter_mut()
+    }
+
+    /// Insert into a row of the grid using an iterator.
+    /// 
+    /// Will insert up to the length of a row.
+    pub fn insert_row(&mut self, y: usize, row: impl IntoIterator<Item=T>)
+    {
+        self.insert_row_at([0,y as i32], row);
+    }
+
+    /// Insert into a row of the grid using an iterator.
+    /// 
+    /// Will insert up to the length of a row.
+    pub fn insert_row_at(&mut self, xy: [i32;2], row: impl IntoIterator<Item=T>) {
+        let [x,y] = xy;
+        let iter = self.row_iter_mut(y as usize).skip(x as usize);
+        for (v, input) in iter.zip(row) {
+            *v = input;
+        }
+    }
+    
+    /// Insert into a column of the grid using an iterator.
+    /// 
+    /// Will insert up to the height of a column.
+    pub fn insert_column(&mut self, x: usize, column: impl IntoIterator<Item=T>) {
+        self.insert_column_at([x as i32,0], column);
+    }
+    
+    /// Insert into a column of the grid using an iterator.
+    /// 
+    /// Will insert up to the height of a column.
+    pub fn insert_column_at(&mut self, xy: [i32;2], column: impl IntoIterator<Item=T>) {
+        let [x,y] = xy;
+        let iter = self.column_iter_mut(x as usize).skip(y as usize);
+        for (v, input) in iter.zip(column) {
+            *v = input;
+        }
     }
 
     /// An iterator over a single column of the grid.
@@ -133,24 +165,6 @@ impl<T: Clone> Grid<T> {
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.data.len()
-    }
-
-    /// Returns a grid position relative to a pivot point on the grid.
-    ///
-    /// The position will be axis-aligned with the given pivot point. For instance,
-    /// for a top left pivot point the x coordinate will increase to the right,
-    /// but the y coordinate will increase downwards.
-    ///
-    /// The center pivot will act the same as the default - where the x coordinate increases
-    /// to the right and the y coordinate increases upward.
-    ///
-    /// Note that for even-sized grids the "center" will be rounded down.
-    /// For example, for a a 4x4 grid calling `pos_from_pivot([0,0], Pivot::Center)` will return [1,1].
-    #[inline]
-    pub fn pos_from_pivot(&self, pos: [i32; 2], pivot: Pivot) -> IVec2 {
-        let tr = self.pivot_position(Pivot::TopRight);
-        let pivot_offset = (tr.as_vec2() * pivot.normalized()).as_ivec2();
-        IVec2::from(pos) * pivot.axis() + pivot_offset
     }
 
     /// Converts a 2d grid position to it's corresponding 1D index.
@@ -375,7 +389,7 @@ mod tests {
     fn row_iter() {
         let mut grid = Grid::default([10, 15]);
 
-        let chars = ['h', 'e', 'l', 'l', 'o'];
+        let chars = "hello".chars();
 
         for (elem, ch) in grid.row_iter_mut(3).take(5).zip(chars) {
             *elem = ch;
@@ -455,90 +469,6 @@ mod tests {
     }
 
     #[test]
-    fn pos_from_pivot() {
-        let grid = Grid::new(0, [5, 5]);
-
-        assert_eq!(
-            [0, 0],
-            grid.pos_from_pivot([0, 0], Pivot::BottomLeft).to_array()
-        );
-        assert_eq!(
-            [1, 1],
-            grid.pos_from_pivot([1, 1], Pivot::BottomLeft).to_array()
-        );
-        assert_eq!(
-            [2, 2],
-            grid.pos_from_pivot([2, 2], Pivot::BottomLeft).to_array()
-        );
-        assert_eq!(
-            [3, 3],
-            grid.pos_from_pivot([3, 3], Pivot::BottomLeft).to_array()
-        );
-
-        assert_eq!(
-            [0, 4],
-            grid.pos_from_pivot([0, 0], Pivot::TopLeft).to_array()
-        );
-        assert_eq!(
-            [1, 3],
-            grid.pos_from_pivot([1, 1], Pivot::TopLeft).to_array()
-        );
-        assert_eq!(
-            [2, 2],
-            grid.pos_from_pivot([2, 2], Pivot::TopLeft).to_array()
-        );
-        assert_eq!(
-            [3, 1],
-            grid.pos_from_pivot([3, 3], Pivot::TopLeft).to_array()
-        );
-
-        assert_eq!(
-            [4, 4],
-            grid.pos_from_pivot([0, 0], Pivot::TopRight).to_array()
-        );
-        assert_eq!(
-            [3, 3],
-            grid.pos_from_pivot([1, 1], Pivot::TopRight).to_array()
-        );
-        assert_eq!(
-            [2, 2],
-            grid.pos_from_pivot([2, 2], Pivot::TopRight).to_array()
-        );
-        assert_eq!(
-            [1, 1],
-            grid.pos_from_pivot([3, 3], Pivot::TopRight).to_array()
-        );
-
-        assert_eq!(
-            [4, 0],
-            grid.pos_from_pivot([0, 0], Pivot::BottomRight).to_array()
-        );
-        assert_eq!(
-            [3, 1],
-            grid.pos_from_pivot([1, 1], Pivot::BottomRight).to_array()
-        );
-        assert_eq!(
-            [2, 2],
-            grid.pos_from_pivot([2, 2], Pivot::BottomRight).to_array()
-        );
-        assert_eq!(
-            [1, 3],
-            grid.pos_from_pivot([3, 3], Pivot::BottomRight).to_array()
-        );
-
-        let grid = Grid::new(0, [4, 4]);
-
-        assert_eq!(
-            [1, 1],
-            grid.pos_from_pivot([0, 0], Pivot::Center).to_array()
-        );
-        assert_eq!(
-            [0, 0],
-            grid.pos_from_pivot([-1, -1], Pivot::Center).to_array()
-        );
-    }
-
-    #[test]
     fn positions() {
         let grid = Grid::new(0, [4, 4]);
 
@@ -559,9 +489,9 @@ mod tests {
 
     #[test]
     fn rect_iter() {
-        let mut grid = Grid::<i32>::new(0, [11, 15]);
+        let mut grid = Grid::new(0, [11, 15]);
 
-        grid[[2, 2]] = 5;
+        grid[[2, 2]] = 5_i32;
         grid[[4, 4]] = 10;
 
         let iter = grid.rect_iter([2, 2]..=[4, 4]);
@@ -576,5 +506,27 @@ mod tests {
         let (p, _) = iter.next().unwrap();
         assert_eq!(p, IVec2::new(2, 2));
         assert_eq!(iter.skip(7).next().unwrap().0, IVec2::new(4, 4));
+    }
+
+    #[test]
+    fn column_insert() {
+        let mut grid = Grid::default([10,10]);
+
+        grid.insert_column(3, "Hello".chars());
+
+        let hello: String = grid.column_iter(3).take(5).collect();
+
+        assert_eq!(hello, "Hello");
+    }
+
+    #[test]
+    fn row_insert() {
+        let mut grid = Grid::default([10,10]);
+
+        grid.insert_row(3, "Hello".chars());
+
+        let hello: String = grid.row_iter(3).take(5).collect();
+
+        assert_eq!(hello, "Hello");
     }
 }
