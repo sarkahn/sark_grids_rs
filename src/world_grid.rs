@@ -46,6 +46,7 @@ use crate::Pivot;
 
 /// A sized grid with a custom pivot for translating between aligned grid points
 /// and world space.
+#[derive(Default, Debug, Clone)]
 pub struct WorldGrid {
     pub world_pos: Vec2,
     size: UVec2,

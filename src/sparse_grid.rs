@@ -33,6 +33,7 @@ use glam::{IVec2, UVec2};
 use crate::Pivot;
 
 /// A sparse grid that stores elements in a [BTreeMap].
+#[derive(Default, Debug, Clone)]
 pub struct SparseGrid<T: Clone> {
     data: BTreeMap<u32, T>,
     size: UVec2,
