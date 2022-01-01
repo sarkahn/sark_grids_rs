@@ -8,6 +8,7 @@ repository = "https://github.com/sarkahn/sark_grids_rs"
 license = "MIT"
 readme = "README.md"
 keywords = ["2d", "grid", "sparse_grid"]
+description = "A set of grids for storing and accessing data in a grid-like way."
 
 [dependencies]
 glam = { version = "0.20.0" }
