@@ -1,5 +1,5 @@
 //! A grid that stores it's internal data in a `BTreeMap`. Elements don't take up any memory until
-//! they're inserted, and can be removed as needed, but iteration and access speed will be slower 
+//! they're inserted, and can be removed as needed, but iteration and access speed will be slower
 //! than a `Grid` for large full grids.
 //!
 //! Elements can be inserted and accessed via their 1d index or 2d index, or

@@ -296,12 +296,12 @@ impl<T: Clone> Grid<T> {
     }
 
     pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {
-        let (min,max) = ranges_to_min_max_usize(slice, self.len());
+        let (min, max) = ranges_to_min_max_usize(slice, self.len());
         &self.data[min..max]
     }
 
     pub fn slice_mut<R: RangeBounds<usize>>(&mut self, slice: R) -> &mut [T] {
-        let (min,max) = ranges_to_min_max_usize(slice, self.len());
+        let (min, max) = ranges_to_min_max_usize(slice, self.len());
         &mut self.data[min..max]
     }
 }
