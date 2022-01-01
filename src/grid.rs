@@ -38,7 +38,6 @@ use crate::{world_grid::WorldGrid, Pivot};
 ///
 /// This grid assumes that `[0,0]` refers to the bottom-left most tile, and
 /// `[width -1, height -1]` refers to the top-right-most tile.
-#[derive(Debug, Default, Clone)]
 pub struct Grid<T: Clone> {
     data: Vec<T>,
     size: UVec2,
@@ -295,6 +294,35 @@ impl<T: Clone> Grid<T> {
     pub fn to_world(&self) -> WorldGrid {
         self.to_world_pivot(Pivot::BottomLeft)
     }
+
+    pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {
+        let (min,max) = ranges_to_min_max_usize(slice, self.len());
+        &self.data[min..max]
+    }
+
+    pub fn slice_mut<R: RangeBounds<usize>>(&mut self, slice: R) -> &mut [T] {
+        let (min,max) = ranges_to_min_max_usize(slice, self.len());
+        &mut self.data[min..max]
+    }
+}
+
+fn ranges_to_min_max_usize<RANGE: RangeBounds<usize>>(range: RANGE, max: usize) -> (usize, usize) {
+    let range_min = match range.start_bound() {
+        std::ops::Bound::Included(v) => *v,
+        std::ops::Bound::Excluded(v) => *v,
+        std::ops::Bound::Unbounded => 0,
+    };
+
+    let range_max = match range.end_bound() {
+        std::ops::Bound::Included(v) => *v,
+        std::ops::Bound::Excluded(v) => v.saturating_sub(1),
+        std::ops::Bound::Unbounded => max,
+    };
+
+    debug_assert!(range_min < range_max);
+    debug_assert!(range_max < max);
+
+    (range_min, range_max)
 }
 
 fn ranges_to_min_max<RANGE: RangeBounds<[i32; 2]>>(range: RANGE, max: IVec2) -> (IVec2, IVec2) {
