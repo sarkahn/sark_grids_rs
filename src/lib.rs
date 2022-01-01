@@ -1,6 +1,6 @@
 pub mod grid;
-pub mod world_grid;
 pub mod sparse_grid;
+pub mod world_grid;
 
 use glam::{IVec2, Vec2};
 

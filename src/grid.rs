@@ -1,24 +1,24 @@
 //! A 2d dense grid of [T].
-//! 
-//! Elements can be inserted and accessed via their 1d index, 2d index, or 
+//!
+//! Elements can be inserted and accessed via their 1d index, 2d index, or
 //! read/modified via iterators.
-//! 
-//! # Example 
-//! 
+//!
+//! # Example
+//!
 //! ```
 //! use sark_grids::grid::Grid;
-//! 
+//!
 //! let mut grid = Grid::default([10,10]);
-//! 
+//!
 //! grid[0] = 'a';
 //! grid[ [1,0] ] = 'b';
-//! 
+//!
 //! assert_eq!('a', grid[0]);
 //! assert_eq!('b', grid[ [1,0] ]);
-//! 
+//!
 //! grid.insert_column_at([3,2], "hello".chars());
 //! let hello: String = grid.column_iter(3).skip(2).take(5).collect();
-//! 
+//!
 //! assert_eq!("hello", hello);
 //! ```
 
@@ -95,36 +95,35 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Insert into a row of the grid using an iterator.
-    /// 
+    ///
     /// Will insert up to the length of a row.
-    pub fn insert_row(&mut self, y: usize, row: impl IntoIterator<Item=T>)
-    {
-        self.insert_row_at([0,y as i32], row);
+    pub fn insert_row(&mut self, y: usize, row: impl IntoIterator<Item = T>) {
+        self.insert_row_at([0, y as i32], row);
     }
 
     /// Insert into a row of the grid using an iterator.
-    /// 
+    ///
     /// Will insert up to the length of a row.
-    pub fn insert_row_at(&mut self, xy: [i32;2], row: impl IntoIterator<Item=T>) {
-        let [x,y] = xy;
+    pub fn insert_row_at(&mut self, xy: [i32; 2], row: impl IntoIterator<Item = T>) {
+        let [x, y] = xy;
         let iter = self.row_iter_mut(y as usize).skip(x as usize);
         for (v, input) in iter.zip(row) {
             *v = input;
         }
     }
-    
+
     /// Insert into a column of the grid using an iterator.
-    /// 
+    ///
     /// Will insert up to the height of a column.
-    pub fn insert_column(&mut self, x: usize, column: impl IntoIterator<Item=T>) {
-        self.insert_column_at([x as i32,0], column);
+    pub fn insert_column(&mut self, x: usize, column: impl IntoIterator<Item = T>) {
+        self.insert_column_at([x as i32, 0], column);
     }
-    
+
     /// Insert into a column of the grid using an iterator.
-    /// 
+    ///
     /// Will insert up to the height of a column.
-    pub fn insert_column_at(&mut self, xy: [i32;2], column: impl IntoIterator<Item=T>) {
-        let [x,y] = xy;
+    pub fn insert_column_at(&mut self, xy: [i32; 2], column: impl IntoIterator<Item = T>) {
+        let [x, y] = xy;
         let iter = self.column_iter_mut(x as usize).skip(y as usize);
         for (v, input) in iter.zip(column) {
             *v = input;
@@ -510,7 +509,7 @@ mod tests {
 
     #[test]
     fn column_insert() {
-        let mut grid = Grid::default([10,10]);
+        let mut grid = Grid::default([10, 10]);
 
         grid.insert_column(3, "Hello".chars());
 
@@ -521,7 +520,7 @@ mod tests {
 
     #[test]
     fn row_insert() {
-        let mut grid = Grid::default([10,10]);
+        let mut grid = Grid::default([10, 10]);
 
         grid.insert_row(3, "Hello".chars());
 
