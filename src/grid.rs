@@ -38,6 +38,7 @@ use crate::{world_grid::WorldGrid, Pivot};
 ///
 /// This grid assumes that `[0,0]` refers to the bottom-left most tile, and
 /// `[width -1, height -1]` refers to the top-right-most tile.
+#[derive(Default, Debug, Clone)]
 pub struct Grid<T: Clone> {
     data: Vec<T>,
     size: UVec2,
