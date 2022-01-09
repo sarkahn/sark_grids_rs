@@ -321,7 +321,7 @@ fn ranges_to_min_max_usize<RANGE: RangeBounds<usize>>(range: RANGE, max: usize) 
     };
 
     debug_assert!(range_min < range_max);
-    debug_assert!(range_max < max);
+    debug_assert!(range_max <= max);
 
     (range_min, range_max)
 }
