@@ -25,12 +25,12 @@
 
 use std::{
     iter::{StepBy, Take},
-    ops::{Index, IndexMut, RangeBounds, Bound},
-    slice::{Iter, IterMut, ChunksMut},
+    ops::{Bound, Index, IndexMut, RangeBounds},
+    slice::{ChunksMut, Iter, IterMut},
 };
 
 use glam::{IVec2, UVec2};
-use itertools::{Itertools};
+use itertools::Itertools;
 
 use crate::{world_grid::WorldGrid, Pivot};
 
@@ -90,7 +90,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from left to right.
     #[inline]
-    pub fn row_iter_mut(&mut self, y: usize) -> impl Iterator<Item=&mut T> {
+    pub fn row_iter_mut(&mut self, y: usize) -> impl Iterator<Item = &mut T> {
         let w = self.width() as usize;
         let i = y * w;
         self.data[i..i + w].iter_mut()
@@ -308,12 +308,10 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Iterate over a range of rows.
-    /// 
+    ///
     /// Yields &\[T\] (Slice of T)
-    pub fn rows_iter(&self, range: impl RangeBounds<usize>)
-    -> impl Iterator<Item=&[T]>
-    {
-        let [start,end] = self.range_to_start_end(range, 1);
+    pub fn rows_iter(&self, range: impl RangeBounds<usize>) -> impl Iterator<Item = &[T]> {
+        let [start, end] = self.range_to_start_end(range, 1);
         let width = self.width() as usize;
         let x = start * width;
         let count = end.saturating_sub(start) + 1;
@@ -322,10 +320,10 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Iterate mutably over a range of rows.
-    /// 
+    ///
     /// Yields &mut \[`T`\] (Slice of mutable `T`)
     pub fn rows_iter_mut(&mut self, range: impl RangeBounds<usize>) -> Take<ChunksMut<T>> {
-        let [start,end] = self.range_to_start_end(range, 1);
+        let [start, end] = self.range_to_start_end(range, 1);
         let width = self.width() as usize;
         let x = start * width;
         let count = end - start + 1;
@@ -338,7 +336,7 @@ impl<T: Clone> Grid<T> {
         match axis {
             0 => self.right_index(),
             1 => self.top_index(),
-            _ => panic!("Invalid grid axis {}", axis)
+            _ => panic!("Invalid grid axis {}", axis),
         }
     }
 
@@ -346,14 +344,14 @@ impl<T: Clone> Grid<T> {
         match axis {
             0 => self.width() as usize,
             1 => self.height() as usize,
-            _ => panic!("Invalid grid axis {}", axis)
+            _ => panic!("Invalid grid axis {}", axis),
         }
     }
 
-    /// Convert a range into a [start,end] pair. 
-    /// 
+    /// Convert a range into a [start,end] pair.
+    ///
     /// An unbounded "end" returned by this function should be treated as EXCLUSIVE.
-    fn range_to_start_end(&self, range: impl RangeBounds<usize>, axis: usize) -> [usize;2] {
+    fn range_to_start_end(&self, range: impl RangeBounds<usize>, axis: usize) -> [usize; 2] {
         let start = match range.start_bound() {
             Bound::Included(start) => *start,
             Bound::Excluded(start) => *start,
@@ -364,8 +362,8 @@ impl<T: Clone> Grid<T> {
             Bound::Excluded(end) => *end - 1,
             Bound::Unbounded => self.axis_size(axis),
         };
-        
-        [start,end]
+
+        [start, end]
     }
 }
 
@@ -479,18 +477,18 @@ mod tests {
 
     #[test]
     fn range_convert() {
-        let grid = Grid::new(0, [5,11]);
-        let [start,end] = grid.range_to_start_end(.., 0);
-        assert_eq!([start,end], [0, 5]);
-        let [start,count] = grid.range_to_start_end(5..=10, 0);
-        assert_eq!([start,count], [5, 10]);
-        let [start,count] = grid.range_to_start_end(3..11, 0);
-        assert_eq!([start,count], [3, 10]);
+        let grid = Grid::new(0, [5, 11]);
+        let [start, end] = grid.range_to_start_end(.., 0);
+        assert_eq!([start, end], [0, 5]);
+        let [start, count] = grid.range_to_start_end(5..=10, 0);
+        assert_eq!([start, count], [5, 10]);
+        let [start, count] = grid.range_to_start_end(3..11, 0);
+        assert_eq!([start, count], [3, 10]);
     }
 
     #[test]
     fn rows_iter() {
-        let mut grid = Grid::default([3,10]);
+        let mut grid = Grid::default([3, 10]);
         grid.insert_row(3, std::iter::repeat(5));
         grid.insert_row(4, std::iter::repeat(6));
 
@@ -502,7 +500,7 @@ mod tests {
 
     #[test]
     fn rows_iter_mut() {
-        let mut grid = Grid::default([3,4]);
+        let mut grid = Grid::default([3, 4]);
         for row in grid.rows_iter_mut(..) {
             row.iter_mut().for_each(|v| *v = 5);
         }
@@ -566,7 +564,7 @@ mod tests {
         assert_eq!(1, p.x);
         assert_eq!(0, p.y);
 
-        let (p, _) = iter.skip(3).next().unwrap();
+        let (p, _) = iter.nth(3).unwrap();
         assert_eq!(0, p.x);
         assert_eq!(1, p.y);
     }
@@ -630,7 +628,7 @@ mod tests {
 
         let (p, _) = iter.next().unwrap();
         assert_eq!(p, IVec2::new(2, 2));
-        assert_eq!(iter.skip(7).next().unwrap().0, IVec2::new(4, 4));
+        assert_eq!(iter.nth(7).unwrap().0, IVec2::new(4, 4));
     }
 
     #[test]
