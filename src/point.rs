@@ -16,7 +16,7 @@ pub trait Point2d: Clone + Copy {
     fn as_vec2(&self) -> Vec2 {
         self.as_ivec2().as_vec2()
     }
-    fn to_array(&self) -> [i32;2] {
+    fn to_array(&self) -> [i32; 2] {
         self.as_ivec2().to_array()
     }
 }
@@ -61,7 +61,7 @@ pub trait Size2d: Clone + Copy {
     fn as_ivec2(&self) -> IVec2 {
         self.as_uvec2().as_ivec2()
     }
-    fn to_array(&self) -> [usize;2] {
+    fn to_array(&self) -> [usize; 2] {
         [self.width(), self.height()]
     }
 }
@@ -71,7 +71,7 @@ impl Size2d for [u32; 2] {
         UVec2::new(self[0], self[1])
     }
 
-    fn to_array(&self) -> [usize;2] {
+    fn to_array(&self) -> [usize; 2] {
         [self[0] as usize, self[1] as usize]
     }
 }

@@ -6,7 +6,7 @@ pub mod sparse_grid;
 pub mod world_grid;
 
 pub use grid::Grid;
-pub use sparse_grid::SparseGrid;
-pub use world_grid::WorldGrid;
 pub use point::Point2d;
 pub use point::Size2d;
+pub use sparse_grid::SparseGrid;
+pub use world_grid::WorldGrid;
