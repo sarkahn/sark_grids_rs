@@ -33,7 +33,7 @@ use std::{
 
 use glam::IVec2;
 
-use crate::point::*;
+use crate::{grid::Side, point::*};
 
 /// A sparse grid that stores elements in a [BTreeMap].
 #[derive(Default, Debug, Clone)]
@@ -215,101 +215,74 @@ impl<T: Clone> SparseGrid<T> {
         [x, y]
     }
 
-    // /// Returns the index of the top row.
-    // #[inline(always)]
-    // pub fn top_index(&self) -> usize {
-    //     (self.height() - 1) as usize
-    // }
+    /// Gets the index for a given side.
+    pub fn side_index(&self, side: Side) -> usize {
+        match side {
+            Side::Left => 0,
+            Side::Top => self.height() - 1,
+            Side::Right => self.width() - 1,
+            Side::Bottom => 0,
+        }
+    }
 
-    // /// Returns the index of the bottom row (`0`).
-    // #[inline(always)]
-    // pub fn bottom_index(&self) -> usize {
-    //     0
-    // }
+    pub fn is_in_bounds(&self, pos: impl Point2d) -> bool {
+        let xy = pos.xy();
+        xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.size).all()
+    }
 
-    // /// Returns the index of the left-most column (`0`).
-    // #[inline(always)]
-    // pub fn left_index(&self) -> usize {
-    //     0
-    // }
+    /// Insert a value in the grid.
+    ///
+    /// Returns `None` if no value was already present. Otherwise the old value
+    /// is returned.
+    #[inline]
+    pub fn insert_index(&mut self, index: usize, value: T) -> Option<T> {
+        self.data.insert(index, value)
+    }
 
-    // /// Returns the index of the right-most column.
-    // #[inline(always)]
-    // pub fn right_index(&self) -> usize {
-    //     (self.width() - 1) as usize
-    // }
+    /// Insert a value in the grid.
+    ///
+    /// Returns `None` if no value was already present. Otherwise the old value
+    /// is returned.
+    #[inline]
+    pub fn insert(&mut self, pos: impl Point2d, value: T) -> Option<T> {
+        let pos = pos.xy();
+        let i = self.pos_to_index(pos);
+        self.data.insert(i, value)
+    }
 
-    // pub fn is_in_bounds(&self, pos: IVec2) -> bool {
-    //     pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
-    // }
+    /// Retrieve a value in the grid from it's 1d index.
+    ///
+    /// Returns `None` if there is no value at the index.
+    #[inline]
+    pub fn get_index(&self, index: usize) -> Option<&T> {
+        self.data.get(&index)
+    }
 
-    // /// Insert a value in the grid.
-    // ///
-    // /// Returns `None` if no value was already present. Otherwise the old value
-    // /// is returned.
-    // #[inline]
-    // pub fn insert_index(&mut self, index: usize, value: T) -> Option<T> {
-    //     self.data.insert(index as u32, value)
-    // }
+    /// Retrieve a mutable value in the grid from it's 1d index.
+    ///
+    /// Returns `None` if there is no value at the index.
+    #[inline]
+    pub fn get_mut_index(&mut self, index: usize) -> Option<&mut T> {
+        self.data.get_mut(&index)
+    }
 
-    // /// Insert a value in the grid.
-    // ///
-    // /// Returns `None` if no value was already present. Otherwise the old value
-    // /// is returned.
-    // #[inline]
-    // pub fn insert(&mut self, pos: impl Point2d, value: T) -> Option<T> {
-    //     let pos = pos.xy();
-    //     let i = self.pos_to_index(pos);
-    //     self.data.insert(i as u32, value)
-    // }
+    /// Retrieve a value in the grid from it's 2d position.
+    ///
+    /// Returns `None` if there is no value at the position.
+    #[inline]
+    pub fn get(&self, pos: impl Point2d) -> Option<&T> {
+        let i = self.pos_to_index(pos.xy());
+        self.get_index(i)
+    }
 
-    // /// Retrieve a value in the grid from it's 1d index.
-    // ///
-    // /// Returns `None` if there is no value at the index.
-    // #[inline]
-    // pub fn get_index(&self, index: usize) -> Option<&T> {
-    //     let i = index as u32;
-    //     self.data.get(&i)
-    // }
-
-    // /// Retrieve a mutable value in the grid from it's 1d index.
-    // ///
-    // /// Returns `None` if there is no value at the index.
-    // #[inline]
-    // pub fn get_mut_index(&mut self, index: usize) -> Option<&mut T> {
-    //     let i = index as u32;
-    //     self.data.get_mut(&i)
-    // }
-
-    // /// Retrieve a value in the grid from it's 2d position.
-    // ///
-    // /// Returns `None` if there is no value at the position.
-    // #[inline]
-    // pub fn get(&self, pos: [i32; 2]) -> Option<&T> {
-    //     let pos = IVec2::from(pos);
-    //     let i = self.pos_to_index(pos.into());
-    //     self.get_index(i)
-    // }
-
-    // /// Retrieve a mutable value in the grid from it's 2d position.
-    // ///
-    // /// Returns `None` if there is no value at the position.
-    // #[inline]
-    // pub fn get_mut(&mut self, pos: [i32; 2]) -> Option<&mut T> {
-    //     let pos = IVec2::from(pos);
-    //     let i = self.pos_to_index(pos.into()) as u32;
-    //     self.data.get_mut(&i)
-    // }
-
-    // #[allow(dead_code)]
-    // pub(crate) fn debug_bounds_check(&self, pos: IVec2) {
-    //     debug_assert!(
-    //         self.is_in_bounds(pos),
-    //         "Position {} is out of grid bounds {}",
-    //         pos,
-    //         self.size()
-    //     );
-    // }
+    /// Retrieve a mutable value in the grid from it's 2d position.
+    ///
+    /// Returns `None` if there is no value at the position.
+    #[inline]
+    pub fn get_mut(&mut self, pos: impl Point2d) -> Option<&mut T> {
+        let i = self.pos_to_index(pos.xy());
+        self.data.get_mut(&i)
+    }
 }
 
 impl<T: Clone, P: Point2d> Index<P> for SparseGrid<T> {
