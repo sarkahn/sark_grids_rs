@@ -32,7 +32,7 @@ use std::{
 use glam::{IVec2, Vec2};
 use itertools::Itertools;
 
-use crate::point::{Pivot, Point2d, Size2d};
+use crate::{point::{GridPoint, Size2d}, world_grid::Pivot};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///
@@ -106,7 +106,7 @@ impl<T: Clone> Grid<T> {
     /// Insert into a row of the grid using an iterator.
     ///
     /// Will insert up to the length of a row.
-    pub fn insert_row_at(&mut self, xy: impl Point2d, row: impl Iterator<Item = T>) {
+    pub fn insert_row_at(&mut self, xy: impl GridPoint, row: impl Iterator<Item = T>) {
         let [x, y] = xy.to_array();
         let iter = self.row_iter_mut(y as usize).skip(x as usize);
         for (v, input) in iter.zip(row) {
@@ -124,7 +124,7 @@ impl<T: Clone> Grid<T> {
     /// Insert into a column of the grid using an iterator.
     ///
     /// Will insert up to the height of a column.
-    pub fn insert_column_at(&mut self, xy: impl Point2d, column: impl IntoIterator<Item = T>) {
+    pub fn insert_column_at(&mut self, xy: impl GridPoint, column: impl IntoIterator<Item = T>) {
         let [x, y] = xy.to_array();
         let iter = self.column_iter_mut(x as usize).skip(y as usize);
         for (v, input) in iter.zip(column) {
@@ -170,7 +170,7 @@ impl<T: Clone> Grid<T> {
 
     /// Converts a 2d grid position to it's corresponding 1D index.
     #[inline(always)]
-    pub fn pos_to_index(&self, pos: impl Point2d) -> usize {
+    pub fn pos_to_index(&self, pos: impl GridPoint) -> usize {
         let [x, y] = pos.to_array();
         y as usize * self.width() + x as usize
     }
@@ -361,7 +361,7 @@ fn ranges_to_min_max<RANGE: RangeBounds<[i32; 2]>>(range: RANGE, max: IVec2) -> 
     (min, max)
 }
 
-impl<T: Clone, P: Point2d> Index<P> for Grid<T> {
+impl<T: Clone, P: GridPoint> Index<P> for Grid<T> {
     type Output = T;
 
     fn index(&self, p: P) -> &Self::Output {
@@ -370,7 +370,7 @@ impl<T: Clone, P: Point2d> Index<P> for Grid<T> {
     }
 }
 
-impl<T: Clone, P: Point2d> IndexMut<P> for Grid<T>
+impl<T: Clone, P: GridPoint> IndexMut<P> for Grid<T>
 where
     T: Default,
 {
@@ -522,25 +522,6 @@ mod tests {
         }
 
         assert_eq!(grid[0], 10);
-    }
-
-    #[test]
-    fn positions() {
-        let grid = Grid::new(0, [4, 4]);
-
-        assert_eq!(grid.pivot_position(Pivot::TopLeft), IVec2::new(0, 3));
-        assert_eq!(grid.pivot_position(Pivot::TopRight), IVec2::new(3, 3));
-        assert_eq!(grid.pivot_position(Pivot::BottomRight), IVec2::new(3, 0));
-        assert_eq!(grid.pivot_position(Pivot::BottomLeft), IVec2::new(0, 0));
-        assert_eq!(grid.pivot_position(Pivot::Center), IVec2::new(1, 1));
-
-        let grid = Grid::new(0, [5, 5]);
-
-        assert_eq!(grid.pivot_position(Pivot::TopLeft), IVec2::new(0, 4));
-        assert_eq!(grid.pivot_position(Pivot::TopRight), IVec2::new(4, 4));
-        assert_eq!(grid.pivot_position(Pivot::BottomRight), IVec2::new(4, 0));
-        assert_eq!(grid.pivot_position(Pivot::BottomLeft), IVec2::new(0, 0));
-        assert_eq!(grid.pivot_position(Pivot::Center), IVec2::new(2, 2));
     }
 
     #[test]

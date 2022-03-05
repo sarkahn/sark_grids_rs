@@ -119,7 +119,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Will insert up to the length of a row.
     pub fn insert_row_at(
         &mut self,
-        xy: impl Point2d,
+        xy: impl GridPoint,
         row: impl IntoIterator<Item = T> + Iterator<Item = T>,
     ) {
         let start = self.pos_to_index(xy);
@@ -145,7 +145,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Will insert up to the height of a column.
     pub fn insert_column_at(
         &mut self,
-        xy: impl Point2d,
+        xy: impl GridPoint,
         column: impl IntoIterator<Item = T> + Iterator<Item = T>,
     ) {
         let start = self.pos_to_index(xy);
@@ -159,7 +159,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Remove the element/tile at the given position.
     ///
     /// Returns the removed element if one was present.
-    pub fn remove(&mut self, pos: impl Point2d) -> Option<T> {
+    pub fn remove(&mut self, pos: impl GridPoint) -> Option<T> {
         let i = self.pos_to_index(pos);
         self.data.remove(&i)
     }
@@ -185,7 +185,7 @@ impl<T: Clone> SparseGrid<T> {
         self.size.y as usize
     }
 
-    pub fn size(&self) -> impl Point2d {
+    pub fn size(&self) -> impl GridPoint {
         self.size
     }
 
@@ -200,14 +200,14 @@ impl<T: Clone> SparseGrid<T> {
 
     /// Converts a 2d grid position to it's corresponding 1D index.
     #[inline(always)]
-    pub fn pos_to_index(&self, pos: impl Point2d) -> usize {
+    pub fn pos_to_index(&self, pos: impl GridPoint) -> usize {
         let [x, y] = pos.to_array();
         (y * self.width() as i32 + x) as usize
     }
 
     /// Converts a 1d index to it's corresponding grid position.
     #[inline(always)]
-    pub fn index_to_pos(&self, index: usize) -> impl Point2d {
+    pub fn index_to_pos(&self, index: usize) -> impl GridPoint {
         let index = index as i32;
         let w = self.width() as i32;
         let x = index % w;
@@ -225,7 +225,7 @@ impl<T: Clone> SparseGrid<T> {
         }
     }
 
-    pub fn is_in_bounds(&self, pos: impl Point2d) -> bool {
+    pub fn is_in_bounds(&self, pos: impl GridPoint) -> bool {
         let xy = pos.as_ivec2();
         xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.size).all()
     }
@@ -244,7 +244,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Returns `None` if no value was already present. Otherwise the old value
     /// is returned.
     #[inline]
-    pub fn insert(&mut self, pos: impl Point2d, value: T) -> Option<T> {
+    pub fn insert(&mut self, pos: impl GridPoint, value: T) -> Option<T> {
         let pos = pos.as_ivec2();
         let i = self.pos_to_index(pos);
         self.data.insert(i, value)
@@ -270,7 +270,7 @@ impl<T: Clone> SparseGrid<T> {
     ///
     /// Returns `None` if there is no value at the position.
     #[inline]
-    pub fn get(&self, pos: impl Point2d) -> Option<&T> {
+    pub fn get(&self, pos: impl GridPoint) -> Option<&T> {
         let i = self.pos_to_index(pos.as_ivec2());
         self.get_index(i)
     }
@@ -279,13 +279,13 @@ impl<T: Clone> SparseGrid<T> {
     ///
     /// Returns `None` if there is no value at the position.
     #[inline]
-    pub fn get_mut(&mut self, pos: impl Point2d) -> Option<&mut T> {
+    pub fn get_mut(&mut self, pos: impl GridPoint) -> Option<&mut T> {
         let i = self.pos_to_index(pos.as_ivec2());
         self.data.get_mut(&i)
     }
 }
 
-impl<T: Clone, P: Point2d> Index<P> for SparseGrid<T> {
+impl<T: Clone, P: GridPoint> Index<P> for SparseGrid<T> {
     type Output = T;
 
     fn index(&self, index: P) -> &Self::Output {
@@ -295,7 +295,7 @@ impl<T: Clone, P: Point2d> Index<P> for SparseGrid<T> {
     }
 }
 
-impl<T: Clone, P: Point2d> IndexMut<P> for SparseGrid<T>
+impl<T: Clone, P: GridPoint> IndexMut<P> for SparseGrid<T>
 where
     T: Default,
 {
@@ -327,7 +327,7 @@ where
 mod test {
     use glam::IVec2;
 
-    use crate::point::Point2d;
+    use crate::point::GridPoint;
 
     use super::SparseGrid;
 

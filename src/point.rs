@@ -1,14 +1,14 @@
+//! Traits for more easily dealing with the various types to represent 2d points/sizes
+
 use glam::{IVec2, UVec2, Vec2};
 
-/// A trait for easier mixing of the different types representing a 2d point.
-pub trait Point2d: Clone + Copy {
-    fn as_ivec2(&self) -> IVec2;
+/// A trait for a point on a 2d grid.
+pub trait GridPoint: Clone + Copy {
+    fn x(&self) -> i32;
+    fn y(&self) -> i32;
 
-    fn x(&self) -> i32 {
-        self.as_ivec2().x
-    }
-    fn y(&self) -> i32 {
-        self.as_ivec2().y
+    fn as_ivec2(&self) -> IVec2 {
+        IVec2::new(self.x(), self.y())
     }
     fn as_uvec2(&self) -> UVec2 {
         self.as_ivec2().as_uvec2()
@@ -21,41 +21,61 @@ pub trait Point2d: Clone + Copy {
     }
 }
 
-impl Point2d for IVec2 {
-    fn as_ivec2(&self) -> IVec2 {
-        *self
+macro_rules! impl_grid_point {
+    ($type:ty) => {
+        impl GridPoint for $type {
+            fn x(&self) -> i32 {
+                self[0] as i32
+            }
+        
+            fn y(&self) -> i32 {
+                self[1] as i32
+            }
+        }
+    };
+}
+
+impl GridPoint for IVec2 {
+    fn x(&self) -> i32 {
+        self.x
+    }
+
+    fn y(&self) -> i32 {
+        self.y
     }
 }
 
-impl Point2d for [i32; 2] {
-    fn as_ivec2(&self) -> IVec2 {
-        IVec2::from(*self)
+impl GridPoint for [i32;2] {
+    fn x(&self) -> i32 {
+        self[0]
+    }
+
+    fn y(&self) -> i32 {
+        self[1]
     }
 }
 
-impl Point2d for [u32; 2] {
-    fn as_ivec2(&self) -> IVec2 {
-        UVec2::from(*self).as_ivec2()
-    }
-}
+impl_grid_point!(UVec2);
+impl_grid_point!(Vec2);
+impl_grid_point!([u32;2]);
+impl_grid_point!([f32;2]);
 
 #[allow(clippy::len_without_is_empty)]
 /// A trait for mixing of the different types representing a 2d size.
 pub trait Size2d: Clone + Copy {
-    fn as_uvec2(&self) -> UVec2;
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
 
-    fn width(&self) -> usize {
-        self.as_uvec2().x as usize
+    fn as_uvec2(&self) -> UVec2 {
+        UVec2::new(self.width() as u32, self.height() as u32)
     }
-    fn height(&self) -> usize {
-        self.as_uvec2().y as usize
-    }
+
     fn len(&self) -> usize {
         self.width() * self.height()
     }
 
     fn as_vec2(&self) -> Vec2 {
-        self.as_ivec2().as_vec2()
+        self.as_uvec2().as_vec2()
     }
 
     fn as_ivec2(&self) -> IVec2 {
@@ -66,74 +86,81 @@ pub trait Size2d: Clone + Copy {
     }
 }
 
-impl Size2d for [u32; 2] {
-    fn as_uvec2(&self) -> UVec2 {
-        UVec2::new(self[0], self[1])
-    }
-
-    fn to_array(&self) -> [usize; 2] {
-        [self[0] as usize, self[1] as usize]
-    }
-}
-
-impl Size2d for UVec2 {
-    fn as_uvec2(&self) -> UVec2 {
-        *self
-    }
-}
-
-impl Size2d for IVec2 {
-    fn as_uvec2(&self) -> UVec2 {
-        (*self).as_uvec2()
-    }
-}
-
-/// A pivot point on a 2d rect.
-#[derive(Eq, PartialEq, Clone, Copy)]
-pub enum Pivot {
-    /// +X Right, +Y Down.
-    TopLeft,
-    /// +X Left, +Y Down.
-    TopRight,
-    /// +X Right, +Y Up.
-    Center,
-    /// +X Right, +Y Up.
-    BottomLeft,
-    /// +X Left, +Y Up
-    BottomRight,
-}
-
-impl Pivot {
-    /// Coordinate axis for adjusting an aligned position on a 2d rect.
-    pub fn axis(&self) -> IVec2 {
-        match self {
-            Pivot::TopLeft => IVec2::new(1, -1),
-            Pivot::TopRight => IVec2::new(-1, -1),
-            Pivot::Center => IVec2::new(1, 1),
-            Pivot::BottomLeft => IVec2::new(1, 1),
-            Pivot::BottomRight => IVec2::new(-1, 1),
+macro_rules! impl_size2d {
+    ($type:ty) => {
+        impl Size2d for $type {
+            fn width(&self) -> usize {
+                self[0] as usize
+            }
+        
+            fn height(&self) -> usize {
+                self[1] as usize
+            }
         }
+    };
+}
+
+impl_size2d!(IVec2);
+impl_size2d!(UVec2);
+impl_size2d!(Vec2);
+impl_size2d!([u32;2]);
+impl_size2d!([i32;2]);
+impl_size2d!([f32;2]);
+
+/// A trait for an arbitrary 2d point.
+pub trait Point2d {
+    fn x(&self) -> f32;
+    fn y(&self) -> f32;
+
+    fn as_ivec2(&self) -> IVec2 {
+        self.as_vec2().as_ivec2()
     }
-
-    /// Transform a point to it's equivalent from the perspective of
-    /// a pivot on a 2d rect.
-    pub fn pivot_aligned_point(&self, point: impl Point2d, size: impl Size2d) -> IVec2 {
-        let point = point.as_ivec2();
-        let align_offset = size.as_ivec2().as_vec2() - Vec2::ONE;
-        let align_offset = (align_offset * Vec2::from(*self)).as_ivec2();
-
-        point * self.axis() + align_offset
+    fn as_uvec2(&self) -> UVec2 {
+        self.as_vec2().as_uvec2()
+    }
+    fn as_vec2(&self) -> Vec2 {
+        Vec2::new(self.x(), self.y())
+    }
+    fn to_array(&self) -> [f32; 2] {
+        self.as_vec2().to_array()
     }
 }
 
-impl From<Pivot> for Vec2 {
-    fn from(p: Pivot) -> Self {
-        match p {
-            Pivot::TopLeft => Vec2::new(0.0, 1.0),
-            Pivot::TopRight => Vec2::new(1.0, 1.0),
-            Pivot::Center => Vec2::new(0.5, 0.5),
-            Pivot::BottomLeft => Vec2::new(0.0, 0.0),
-            Pivot::BottomRight => Vec2::new(1.0, 0.0),
+impl Point2d for Vec2 {
+    fn x(&self) -> f32 {
+        self.x
+    }
+
+    fn y(&self) -> f32 {
+        self.y
+    }
+}
+
+impl Point2d for [f32;2] {
+    fn x(&self) -> f32 {
+        self[0]
+    }
+
+    fn y(&self) -> f32 {
+        self[1]
+    }
+}
+
+macro_rules! impl_point2d {
+    ($type:ty) => {
+        impl Point2d for $type {
+            fn x(&self) -> f32 {
+                self[0] as f32
+            }
+        
+            fn y(&self) -> f32 {
+                self[1] as f32
+            }
         }
-    }
+    };
 }
+
+impl_point2d!(IVec2);
+impl_point2d!(UVec2);
+impl_point2d!([u32;2]);
+impl_point2d!([i32;2]);

@@ -42,7 +42,7 @@ use itertools::Itertools;
 
 use glam::{IVec2, Vec2};
 
-use crate::point::{Pivot, Point2d, Size2d};
+use crate::point::{GridPoint, Size2d};
 
 /// A sized grid with a custom pivot for translating between aligned grid points
 /// and world space.
@@ -61,7 +61,7 @@ pub struct WorldGrid {
 }
 
 impl WorldGrid {
-    pub fn new(world_pos: impl Point2d, size: impl Size2d, pivot: Pivot) -> Self {
+    pub fn new(world_pos: impl GridPoint, size: impl Size2d, pivot: Pivot) -> Self {
         let world_pos = world_pos.as_ivec2();
         let size = size.as_ivec2();
 
@@ -102,14 +102,14 @@ impl WorldGrid {
     ///
     /// A tile's "position" refers to the bottom left point on the tile.
     #[inline]
-    pub fn tile_pos(&self, grid_pos: impl Point2d) -> Vec2 {
+    pub fn tile_pos(&self, grid_pos: impl GridPoint) -> Vec2 {
         let grid_pos = grid_pos.as_ivec2().as_vec2();
         grid_pos + self.pos_offset
     }
 
     /// Returns the center point of a given tile.
     #[inline]
-    pub fn tile_center(&self, grid_pos: impl Point2d) -> Vec2 {
+    pub fn tile_center(&self, grid_pos: impl GridPoint) -> Vec2 {
         let grid_pos = grid_pos.as_ivec2().as_vec2();
         grid_pos + self.center_offset
     }
@@ -118,13 +118,13 @@ impl WorldGrid {
     ///
     /// A tile's "position" refers to the bottom left point on the tile.
     #[inline]
-    pub fn tile_pos_world(&self, grid_pos: impl Point2d) -> Vec2 {
+    pub fn tile_pos_world(&self, grid_pos: impl GridPoint) -> Vec2 {
         self.tile_pos(grid_pos) + self.world_pos
     }
 
     /// Return's the center of the given tile in world space.
     #[inline]
-    pub fn tile_center_world(&self, grid_pos: impl Point2d) -> Vec2 {
+    pub fn tile_center_world(&self, grid_pos: impl GridPoint) -> Vec2 {
         self.tile_center(grid_pos) + self.world_pos
     }
 
@@ -133,13 +133,13 @@ impl WorldGrid {
     /// A grid's bounds are determined by it's pivot - a grid's pivot always
     /// sits on the world origin.
     #[inline]
-    pub fn grid_pos_in_bounds(&self, grid_pos: impl Point2d) -> bool {
+    pub fn grid_pos_in_bounds(&self, grid_pos: impl GridPoint) -> bool {
         self.try_grid_to_index_2d(grid_pos).is_some()
     }
 
     /// Whether or not the given 2d index is inside the grid bounds.
     #[inline]
-    pub fn index_2d_in_bounds(&self, index: impl Point2d) -> bool {
+    pub fn index_2d_in_bounds(&self, index: impl GridPoint) -> bool {
         let index = index.as_ivec2();
         index.cmpge(IVec2::ZERO).all() && index.cmplt(self.size()).all()
     }
@@ -147,7 +147,7 @@ impl WorldGrid {
     /// Convert a grid point to it's corresponding 2d index.
     ///
     /// Returns none if the given grid point is out of bounds.
-    pub fn try_grid_to_index_2d(&self, grid_pos: impl Point2d) -> Option<IVec2> {
+    pub fn try_grid_to_index_2d(&self, grid_pos: impl GridPoint) -> Option<IVec2> {
         let center = self.tile_center(grid_pos);
         let index = center * self.axis - self.pivot_offset;
 
@@ -161,14 +161,14 @@ impl WorldGrid {
     ///
     /// This function will return out of bounds values if given out of bounds grid positions.
     /// For a bound-checked version use `try_grid_to_index_2d`
-    pub fn grid_to_index_2d(&self, grid_pos: impl Point2d) -> IVec2 {
+    pub fn grid_to_index_2d(&self, grid_pos: impl GridPoint) -> IVec2 {
         let center = self.tile_center(grid_pos);
         let index = center * self.axis - self.pivot_offset;
         index.as_ivec2()
     }
 
     /// Convert from a 2d index to it's corresponding grid position.
-    pub fn index_2d_to_grid(&self, i: impl Point2d) -> IVec2 {
+    pub fn index_2d_to_grid(&self, i: impl GridPoint) -> IVec2 {
         let p = i.as_ivec2().as_vec2();
         let p = (self.pivot_offset - self.pos_offset) + p;
         let p = p + self.center_offset;
@@ -219,9 +219,7 @@ impl WorldGrid {
 
 #[cfg(test)]
 mod test {
-    use crate::point::Pivot;
-
-    use super::WorldGrid;
+    use super::*;
 
     #[test]
     fn center_iter_odd() {
@@ -458,5 +456,56 @@ mod test {
 
         assert_eq!([0.0, 0.0], grid.tile_pos([0, 0]).to_array());
         assert_eq!([-1.0, -1.0], grid.tile_pos([-1, -1]).to_array());
+    }
+}
+
+
+/// A pivot point on a 2d rect.
+#[derive(Eq, PartialEq, Clone, Copy)]
+pub enum Pivot {
+    /// +X Right, +Y Down.
+    TopLeft,
+    /// +X Left, +Y Down.
+    TopRight,
+    /// +X Right, +Y Up.
+    Center,
+    /// +X Right, +Y Up.
+    BottomLeft,
+    /// +X Left, +Y Up
+    BottomRight,
+}
+
+impl Pivot {
+    /// Coordinate axis for adjusting an aligned position on a 2d rect.
+    pub fn axis(&self) -> IVec2 {
+        match self {
+            Pivot::TopLeft => IVec2::new(1, -1),
+            Pivot::TopRight => IVec2::new(-1, -1),
+            Pivot::Center => IVec2::new(1, 1),
+            Pivot::BottomLeft => IVec2::new(1, 1),
+            Pivot::BottomRight => IVec2::new(-1, 1),
+        }
+    }
+
+    /// Transform a point to it's equivalent from the perspective of
+    /// a pivot on a 2d rect.
+    pub fn pivot_aligned_point(&self, point: impl GridPoint, size: impl Size2d) -> IVec2 {
+        let point = point.as_ivec2();
+        let align_offset = size.as_ivec2().as_vec2() - Vec2::ONE;
+        let align_offset = (align_offset * Vec2::from(*self)).as_ivec2();
+
+        point * self.axis() + align_offset
+    }
+}
+
+impl From<Pivot> for Vec2 {
+    fn from(p: Pivot) -> Self {
+        match p {
+            Pivot::TopLeft => Vec2::new(0.0, 1.0),
+            Pivot::TopRight => Vec2::new(1.0, 1.0),
+            Pivot::Center => Vec2::new(0.5, 0.5),
+            Pivot::BottomLeft => Vec2::new(0.0, 0.0),
+            Pivot::BottomRight => Vec2::new(1.0, 0.0),
+        }
     }
 }
