@@ -124,7 +124,7 @@ impl WorldGrid {
 
     /// Return's the center of the given tile in world space.
     #[inline]
-    pub fn tile_center_world(&self, grid_pos: [i32; 2]) -> Vec2 {
+    pub fn tile_center_world(&self, grid_pos: impl Point2d) -> Vec2 {
         self.tile_center(grid_pos) + self.world_pos
     }
 
@@ -133,7 +133,7 @@ impl WorldGrid {
     /// A grid's bounds are determined by it's pivot - a grid's pivot always
     /// sits on the world origin.
     #[inline]
-    pub fn grid_pos_in_bounds(&self, grid_pos: [i32; 2]) -> bool {
+    pub fn grid_pos_in_bounds(&self, grid_pos: impl Point2d) -> bool {
         self.try_grid_to_index_2d(grid_pos).is_some()
     }
 
@@ -147,7 +147,7 @@ impl WorldGrid {
     /// Convert a grid point to it's corresponding 2d index.
     ///
     /// Returns none if the given grid point is out of bounds.
-    pub fn try_grid_to_index_2d(&self, grid_pos: [i32; 2]) -> Option<IVec2> {
+    pub fn try_grid_to_index_2d(&self, grid_pos: impl Point2d) -> Option<IVec2> {
         let center = self.tile_center(grid_pos);
         let index = center * self.axis - self.pivot_offset;
 
