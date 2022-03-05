@@ -12,8 +12,8 @@
 //!
 //! let mut grid = SparseGrid::new([10,10]);
 //!
-//! grid.insert_index(4, 'i');
-//! grid.insert([3,0], 'h');
+//! grid[4] = 'i';
+//! grid[[3,0]]= 'h';
 //!
 //! assert_eq!(2, grid.len());
 //!
@@ -26,35 +26,36 @@
 //! assert_eq!("ih", ih);
 //! ```
 
-use std::{collections::BTreeMap, ops::Index};
+use std::{
+    collections::BTreeMap,
+    ops::{Index, IndexMut},
+};
 
-use glam::{IVec2, UVec2};
+use glam::IVec2;
 
-use crate::Pivot;
+use crate::point::*;
 
 /// A sparse grid that stores elements in a [BTreeMap].
 #[derive(Default, Debug, Clone)]
 pub struct SparseGrid<T: Clone> {
-    data: BTreeMap<u32, T>,
-    size: UVec2,
+    data: BTreeMap<usize, T>,
+    size: IVec2,
 }
 
 impl<T: Clone> SparseGrid<T> {
     /// Creates a new [SparseGrid<T>].
-    pub fn new(size: [u32; 2]) -> Self {
-        let size = UVec2::from(size);
-
+    pub fn new(size: impl Size2d) -> Self {
         Self {
             data: BTreeMap::new(),
-            size,
+            size: size.xy(),
         }
     }
 
     /// An iterator over all elements in the grid.
     ///
-    /// Yields `(&u32,&mut T)` where `u32` is the 1d position of the element in the grid.
+    /// Yields `(&usize,&mut T)` where `usize` is the 1d position of the element in the grid.
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = (&u32, &T)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&usize, &T)> {
         self.data.iter()
     }
 
@@ -74,35 +75,35 @@ impl<T: Clone> SparseGrid<T> {
 
     /// A mutable iterator over all elements in the grid.
     ///
-    /// Yields `(&u32,&mut T)` where `u32` is the 1d position of the element in the grid.
+    /// Yields `(&usize,&mut T)` where `usize` is the 1d position of the element in the grid.
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&u32, &mut T)> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&usize, &mut T)> {
         self.data.iter_mut()
     }
 
     /// A 2d iterator over all elements in the grid.
     ///
-    /// Yields `(UVec2,&mut T)` where `UVec2` is the 2d position of the element in the grid.
+    /// Yields `(IVec2,&mut T)` where `IVec2` is the 2d position of the element in the grid.
     #[inline]
-    pub fn iter_2d(&self) -> impl Iterator<Item = (UVec2, &T)> {
+    pub fn iter_2d(&self) -> impl Iterator<Item = (IVec2, &T)> {
         let w = self.width();
         self.data.iter().map(move |(i, v)| {
             let x = i % w;
             let y = i / w;
-            (UVec2::new(x, y), v)
+            (IVec2::new(x as i32, y as i32), v)
         })
     }
 
     /// A mutable iterator over all elements in the grid.
     ///
-    /// Yields `(UVec,&mut T)` where `UVec2` is the 2d position of the element in the grid.
+    /// Yields `(IVec,&mut T)` where `IVec2` is the 2d position of the element in the grid.
     #[inline]
-    pub fn iter_mut_2d(&mut self) -> impl Iterator<Item = (UVec2, &mut T)> {
+    pub fn iter_mut_2d(&mut self) -> impl Iterator<Item = (IVec2, &mut T)> {
         let w = self.width();
         self.data.iter_mut().map(move |(i, v)| {
             let x = i % w;
             let y = i / w;
-            (UVec2::new(x, y), v)
+            (IVec2::new(x as i32, y as i32), v)
         })
     }
 
@@ -118,13 +119,13 @@ impl<T: Clone> SparseGrid<T> {
     /// Will insert up to the length of a row.
     pub fn insert_row_at(
         &mut self,
-        xy: [i32; 2],
+        xy: impl Point2d,
         row: impl IntoIterator<Item = T> + Iterator<Item = T>,
     ) {
-        let start = self.pos_to_index(xy) as u32;
-        let max = self.width() as usize - 1 - xy[0] as usize;
+        let start = self.pos_to_index(xy);
+        let max = self.width() - 1 - xy.x() as usize;
         for (x, v) in row.take(max).enumerate() {
-            self.data.insert(start + x as u32, v);
+            self.data.insert(start + x, v);
         }
     }
 
@@ -139,18 +140,18 @@ impl<T: Clone> SparseGrid<T> {
         self.insert_column_at([x as i32, 0], column);
     }
 
-    /// Insert into a column of the grid using an iterator.
+    /// Insert into a column of the grid starting from some point using an iterator.
     ///
     /// Will insert up to the height of a column.
     pub fn insert_column_at(
         &mut self,
-        xy: [i32; 2],
+        xy: impl Point2d,
         column: impl IntoIterator<Item = T> + Iterator<Item = T>,
     ) {
-        let start = self.pos_to_index(xy) as u32;
-        let max = self.height() as usize - 1 - xy[1] as usize;
+        let start = self.pos_to_index(xy);
+        let max = self.height() - 1 - xy.y() as usize;
         for (y, v) in column.take(max).enumerate() {
-            let i = start + (y as u32 * self.width());
+            let i = start + (y * self.width());
             self.data.insert(i, v);
         }
     }
@@ -158,8 +159,8 @@ impl<T: Clone> SparseGrid<T> {
     /// Remove the element/tile at the given position.
     ///
     /// Returns the removed element if one was present.
-    pub fn remove(&mut self, pos: [u32; 2]) -> Option<T> {
-        let i = self.upos_to_index(pos) as u32;
+    pub fn remove(&mut self, pos: impl Point2d) -> Option<T> {
+        let i = self.pos_to_index(pos);
         self.data.remove(&i)
     }
 
@@ -167,7 +168,7 @@ impl<T: Clone> SparseGrid<T> {
     ///
     /// Returns the removed element if one was present.
     pub fn remove_index(&mut self, index: usize) -> Option<T> {
-        let index = index as u32;
+        let index = index;
         self.data.remove(&index)
     }
 
@@ -176,15 +177,15 @@ impl<T: Clone> SparseGrid<T> {
         self.data.clear();
     }
 
-    pub fn width(&self) -> u32 {
-        self.size.x
+    pub fn width(&self) -> usize {
+        self.size.x as usize
     }
 
-    pub fn height(&self) -> u32 {
-        self.size.y
+    pub fn height(&self) -> usize {
+        self.size.y as usize
     }
 
-    pub fn size(&self) -> UVec2 {
+    pub fn size(&self) -> impl Point2d {
         self.size
     }
 
@@ -199,149 +200,136 @@ impl<T: Clone> SparseGrid<T> {
 
     /// Converts a 2d grid position to it's corresponding 1D index.
     #[inline(always)]
-    pub fn pos_to_index(&self, pos: [i32; 2]) -> usize {
-        (pos[1] * self.width() as i32 + pos[0]) as usize
-    }
-
-    /// Converts a 2d grid position to it's corresponding 1D index.
-    #[inline(always)]
-    pub fn upos_to_index(&self, pos: [u32; 2]) -> usize {
-        (pos[1] * self.width() as u32 + pos[0]) as usize
+    pub fn pos_to_index(&self, pos: impl Point2d) -> usize {
+        let [x, y] = pos.to_array();
+        (y * self.width() as i32 + x) as usize
     }
 
     /// Converts a 1d index to it's corresponding grid position.
     #[inline(always)]
-    pub fn index_to_pos(&self, index: usize) -> IVec2 {
+    pub fn index_to_pos(&self, index: usize) -> impl Point2d {
         let index = index as i32;
         let w = self.width() as i32;
         let x = index % w;
         let y = index / w;
-        IVec2::new(x, y)
+        [x, y]
     }
 
-    /// Converts a 1d index to it's corresponding grid position.
-    #[inline(always)]
-    pub fn index_to_upos(&self, index: usize) -> UVec2 {
-        self.index_to_pos(index).as_uvec2()
-    }
+    // /// Returns the index of the top row.
+    // #[inline(always)]
+    // pub fn top_index(&self) -> usize {
+    //     (self.height() - 1) as usize
+    // }
 
-    /// Returns the index of the top row.
-    #[inline(always)]
-    pub fn top_index(&self) -> usize {
-        (self.height() - 1) as usize
-    }
+    // /// Returns the index of the bottom row (`0`).
+    // #[inline(always)]
+    // pub fn bottom_index(&self) -> usize {
+    //     0
+    // }
 
-    /// Returns the index of the bottom row (`0`).
-    #[inline(always)]
-    pub fn bottom_index(&self) -> usize {
-        0
-    }
+    // /// Returns the index of the left-most column (`0`).
+    // #[inline(always)]
+    // pub fn left_index(&self) -> usize {
+    //     0
+    // }
 
-    /// Returns the index of the left-most column (`0`).
-    #[inline(always)]
-    pub fn left_index(&self) -> usize {
-        0
-    }
+    // /// Returns the index of the right-most column.
+    // #[inline(always)]
+    // pub fn right_index(&self) -> usize {
+    //     (self.width() - 1) as usize
+    // }
 
-    /// Returns the index of the right-most column.
-    #[inline(always)]
-    pub fn right_index(&self) -> usize {
-        (self.width() - 1) as usize
-    }
+    // pub fn is_in_bounds(&self, pos: IVec2) -> bool {
+    //     pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
+    // }
 
-    /// Get the position of a tile on the grid at the given pivot.
-    ///
-    /// Note that for even-sized grids the "center" will be rounded down.
-    /// For example, for a a 4x4 grid calling `pivot_position(Pivot::Center)` will return `(1,1)`.
-    pub fn pivot_position(&self, pivot: Pivot) -> IVec2 {
-        match pivot {
-            Pivot::TopLeft => IVec2::new(0, self.top_index() as i32),
-            Pivot::TopRight => IVec2::new(self.right_index() as i32, self.top_index() as i32),
-            Pivot::Center => {
-                let tr = self.pivot_position(Pivot::TopRight);
-                (tr.as_vec2() / 2.0).as_ivec2()
-            }
-            Pivot::BottomLeft => IVec2::ZERO,
-            Pivot::BottomRight => IVec2::new(self.right_index() as i32, 0),
-        }
-    }
+    // /// Insert a value in the grid.
+    // ///
+    // /// Returns `None` if no value was already present. Otherwise the old value
+    // /// is returned.
+    // #[inline]
+    // pub fn insert_index(&mut self, index: usize, value: T) -> Option<T> {
+    //     self.data.insert(index as u32, value)
+    // }
 
-    pub fn is_in_bounds(&self, pos: IVec2) -> bool {
-        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
-    }
+    // /// Insert a value in the grid.
+    // ///
+    // /// Returns `None` if no value was already present. Otherwise the old value
+    // /// is returned.
+    // #[inline]
+    // pub fn insert(&mut self, pos: impl Point2d, value: T) -> Option<T> {
+    //     let pos = pos.xy();
+    //     let i = self.pos_to_index(pos);
+    //     self.data.insert(i as u32, value)
+    // }
 
-    /// Insert a value in the grid.
-    ///
-    /// Returns `None` if no value was already present. Otherwise the old value
-    /// is returned.
-    #[inline]
-    pub fn insert_index(&mut self, index: usize, value: T) -> Option<T> {
-        self.data.insert(index as u32, value)
-    }
+    // /// Retrieve a value in the grid from it's 1d index.
+    // ///
+    // /// Returns `None` if there is no value at the index.
+    // #[inline]
+    // pub fn get_index(&self, index: usize) -> Option<&T> {
+    //     let i = index as u32;
+    //     self.data.get(&i)
+    // }
 
-    #[inline]
-    pub fn insert(&mut self, pos: [i32; 2], value: T) -> Option<T> {
-        let pos = IVec2::from(pos);
-        let i = self.pos_to_index(pos.into());
-        self.data.insert(i as u32, value)
-    }
+    // /// Retrieve a mutable value in the grid from it's 1d index.
+    // ///
+    // /// Returns `None` if there is no value at the index.
+    // #[inline]
+    // pub fn get_mut_index(&mut self, index: usize) -> Option<&mut T> {
+    //     let i = index as u32;
+    //     self.data.get_mut(&i)
+    // }
 
-    /// Retrieve a value in the grid from it's 1d index.
-    ///
-    /// Returns `None` if there is no value at the index.
-    #[inline]
-    pub fn get_index(&self, index: usize) -> Option<&T> {
-        let i = index as u32;
-        self.data.get(&i)
-    }
+    // /// Retrieve a value in the grid from it's 2d position.
+    // ///
+    // /// Returns `None` if there is no value at the position.
+    // #[inline]
+    // pub fn get(&self, pos: [i32; 2]) -> Option<&T> {
+    //     let pos = IVec2::from(pos);
+    //     let i = self.pos_to_index(pos.into());
+    //     self.get_index(i)
+    // }
 
-    /// Retrieve a mutable value in the grid from it's 1d index.
-    ///
-    /// Returns `None` if there is no value at the index.
-    #[inline]
-    pub fn get_mut_index(&mut self, index: usize) -> Option<&mut T> {
-        let i = index as u32;
-        self.data.get_mut(&i)
-    }
+    // /// Retrieve a mutable value in the grid from it's 2d position.
+    // ///
+    // /// Returns `None` if there is no value at the position.
+    // #[inline]
+    // pub fn get_mut(&mut self, pos: [i32; 2]) -> Option<&mut T> {
+    //     let pos = IVec2::from(pos);
+    //     let i = self.pos_to_index(pos.into()) as u32;
+    //     self.data.get_mut(&i)
+    // }
 
-    /// Retrieve a value in the grid from it's 2d position.
-    ///
-    /// Returns `None` if there is no value at the position.
-    #[inline]
-    pub fn get(&self, pos: [i32; 2]) -> Option<&T> {
-        let pos = IVec2::from(pos);
-        let i = self.pos_to_index(pos.into());
-        self.get_index(i)
-    }
+    // #[allow(dead_code)]
+    // pub(crate) fn debug_bounds_check(&self, pos: IVec2) {
+    //     debug_assert!(
+    //         self.is_in_bounds(pos),
+    //         "Position {} is out of grid bounds {}",
+    //         pos,
+    //         self.size()
+    //     );
+    // }
+}
 
-    /// Retrieve a mutable value in the grid from it's 2d position.
-    ///
-    /// Returns `None` if there is no value at the position.
-    #[inline]
-    pub fn get_mut(&mut self, pos: [i32; 2]) -> Option<&mut T> {
-        let pos = IVec2::from(pos);
-        let i = self.pos_to_index(pos.into()) as u32;
-        self.data.get_mut(&i)
-    }
+impl<T: Clone, P: Point2d> Index<P> for SparseGrid<T> {
+    type Output = T;
 
-    #[allow(dead_code)]
-    pub(crate) fn debug_bounds_check(&self, pos: IVec2) {
-        debug_assert!(
-            self.is_in_bounds(pos),
-            "Position {} is out of grid bounds {}",
-            pos,
-            self.size()
-        );
+    fn index(&self, index: P) -> &Self::Output {
+        let xy = index.xy();
+        let i = self.pos_to_index(xy);
+        &self.data[&i]
     }
 }
 
-impl<T: Clone> Index<[u32; 2]> for SparseGrid<T> {
-    type Output = T;
-
-    #[inline(always)]
-    fn index(&self, index: [u32; 2]) -> &Self::Output {
-        let i = self.upos_to_index(index) as u32;
-        &self.data[&i]
+impl<T: Clone, P: Point2d> IndexMut<P> for SparseGrid<T>
+where
+    T: Default,
+{
+    fn index_mut(&mut self, index: P) -> &mut T {
+        let xy = index.xy();
+        let i = self.pos_to_index(xy);
+        &mut *self.data.entry(i).or_default()
     }
 }
 
@@ -350,36 +338,41 @@ impl<T: Clone> Index<usize> for SparseGrid<T> {
 
     #[inline(always)]
     fn index(&self, index: usize) -> &Self::Output {
-        let index = index as u32;
         &self.data[&index]
     }
 }
-
-impl<T: Clone> Index<IVec2> for SparseGrid<T> {
-    type Output = T;
-
-    #[inline(always)]
-    fn index(&self, index: IVec2) -> &Self::Output {
-        let index = self.pos_to_index(index.into()) as u32;
-        &self.data[&index]
-    }
-}
-
-impl<T: Clone> Index<UVec2> for SparseGrid<T> {
-    type Output = T;
-
-    #[inline(always)]
-    fn index(&self, index: UVec2) -> &Self::Output {
-        let index = self.upos_to_index(index.into()) as u32;
-        &self.data[&index]
+impl<T: Clone> IndexMut<usize> for SparseGrid<T>
+where
+    T: Default,
+{
+    fn index_mut(&mut self, index: usize) -> &mut T {
+        &mut *self.data.entry(index).or_default()
     }
 }
 
 #[cfg(test)]
 mod test {
-    use glam::UVec2;
+    use glam::IVec2;
+
+    use crate::point::Point2d;
 
     use super::SparseGrid;
+
+    #[test]
+    fn index() {
+        let mut grid = SparseGrid::new([10, 17]);
+
+        let [x, y] = grid.index_to_pos(5).to_array();
+
+        grid[[5, 6]] = 10;
+
+        assert_eq!(grid[[5, 6]], 10);
+
+        let xy = IVec2::new(x, y);
+
+        grid[xy] = 15;
+        assert_eq!(grid[xy], 15);
+    }
 
     #[test]
     fn insert_row() {
@@ -394,7 +387,7 @@ mod test {
         assert_eq!("Hello", str);
 
         for (i, (p, _)) in grid.iter_2d().enumerate() {
-            assert_eq!((i as u32, 5), p.into());
+            assert_eq!([i as i32, 5], p.to_array());
         }
     }
 
@@ -412,11 +405,11 @@ mod test {
 
         let kvp: Vec<_> = grid.iter_2d().collect();
 
-        assert_eq!((UVec2::new(3, 3), &'H'), kvp[0]);
-        assert_eq!((UVec2::new(4, 3), &'e'), kvp[1]);
-        assert_eq!((UVec2::new(5, 3), &'l'), kvp[2]);
-        assert_eq!((UVec2::new(6, 3), &'l'), kvp[3]);
-        assert_eq!((UVec2::new(7, 3), &'o'), kvp[4]);
+        assert_eq!((IVec2::new(3, 3), &'H'), kvp[0]);
+        assert_eq!((IVec2::new(4, 3), &'e'), kvp[1]);
+        assert_eq!((IVec2::new(5, 3), &'l'), kvp[2]);
+        assert_eq!((IVec2::new(6, 3), &'l'), kvp[3]);
+        assert_eq!((IVec2::new(7, 3), &'o'), kvp[4]);
     }
 
     #[test]
@@ -432,7 +425,7 @@ mod test {
         assert_eq!("Hello", str);
 
         for (i, (p, _)) in grid.iter_2d().enumerate() {
-            assert_eq!((5, i as u32,), p.into());
+            assert_eq!([5, i as i32], p.to_array());
         }
     }
 
@@ -450,23 +443,23 @@ mod test {
 
         let kvp: Vec<_> = grid.iter_2d().collect();
 
-        assert_eq!((UVec2::new(3, 3), &'H'), kvp[0]);
-        assert_eq!((UVec2::new(3, 4), &'e'), kvp[1]);
-        assert_eq!((UVec2::new(3, 5), &'l'), kvp[2]);
-        assert_eq!((UVec2::new(3, 6), &'l'), kvp[3]);
-        assert_eq!((UVec2::new(3, 7), &'o'), kvp[4]);
+        assert_eq!((IVec2::new(3, 3), &'H'), kvp[0]);
+        assert_eq!((IVec2::new(3, 4), &'e'), kvp[1]);
+        assert_eq!((IVec2::new(3, 5), &'l'), kvp[2]);
+        assert_eq!((IVec2::new(3, 6), &'l'), kvp[3]);
+        assert_eq!((IVec2::new(3, 7), &'o'), kvp[4]);
     }
 
     #[test]
     fn insert() {
         let mut grid = SparseGrid::new([10, 10]);
 
-        grid.insert([0, 0], 'h');
-        grid.insert([1, 3], '3');
+        grid[[0, 0]] = 'h';
+        grid[[1, 3]] = '3';
 
         assert_eq!(2, grid.len());
 
         assert_eq!('h', grid[[0, 0]]);
-        assert_eq!('3', *grid.get([1, 3]).unwrap());
+        assert_eq!('3', grid[[1, 3]]);
     }
 }

@@ -29,10 +29,10 @@ use std::{
     slice::{ChunksMut, Iter, IterMut},
 };
 
-use glam::{IVec2, UVec2};
+use glam::{IVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{world_grid::WorldGrid, Pivot};
+use crate::point::{Pivot, Point2d, Size2d};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///
@@ -41,13 +41,13 @@ use crate::{world_grid::WorldGrid, Pivot};
 #[derive(Default, Debug, Clone)]
 pub struct Grid<T: Clone> {
     data: Vec<T>,
-    size: UVec2,
+    size: IVec2,
 }
 
 impl<T: Clone> Grid<T> {
     /// Creates a new [Grid<T>] with the given default value set for all elements.
-    pub fn new(value: T, size: [u32; 2]) -> Self {
-        let size = UVec2::from(size);
+    pub fn new(value: T, size: impl Size2d) -> Self {
+        let size = size.xy();
         let len = (size.x * size.y) as usize;
 
         Self {
@@ -57,7 +57,7 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Creates a new [Grid<T>] with all elements initialized to default values.
-    pub fn default(size: [u32; 2]) -> Self
+    pub fn default(size: impl Size2d) -> Self
     where
         T: Default,
     {
@@ -106,8 +106,8 @@ impl<T: Clone> Grid<T> {
     /// Insert into a row of the grid using an iterator.
     ///
     /// Will insert up to the length of a row.
-    pub fn insert_row_at(&mut self, xy: [i32; 2], row: impl Iterator<Item = T>) {
-        let [x, y] = xy;
+    pub fn insert_row_at(&mut self, xy: impl Point2d, row: impl Iterator<Item = T>) {
+        let [x, y] = xy.to_array();
         let iter = self.row_iter_mut(y as usize).skip(x as usize);
         for (v, input) in iter.zip(row) {
             *v = input;
@@ -124,8 +124,8 @@ impl<T: Clone> Grid<T> {
     /// Insert into a column of the grid using an iterator.
     ///
     /// Will insert up to the height of a column.
-    pub fn insert_column_at(&mut self, xy: [i32; 2], column: impl IntoIterator<Item = T>) {
-        let [x, y] = xy;
+    pub fn insert_column_at(&mut self, xy: impl Point2d, column: impl IntoIterator<Item = T>) {
+        let [x, y] = xy.to_array();
         let iter = self.column_iter_mut(x as usize).skip(y as usize);
         for (v, input) in iter.zip(column) {
             *v = input;
@@ -150,15 +150,15 @@ impl<T: Clone> Grid<T> {
         return self.data[x..].iter_mut().step_by(w);
     }
 
-    pub fn width(&self) -> u32 {
-        self.size.x
+    pub fn width(&self) -> usize {
+        self.size.x as usize
     }
 
-    pub fn height(&self) -> u32 {
-        self.size.y
+    pub fn height(&self) -> usize {
+        self.size.y as usize
     }
 
-    pub fn size(&self) -> UVec2 {
+    pub fn size(&self) -> IVec2 {
         self.size
     }
 
@@ -170,14 +170,9 @@ impl<T: Clone> Grid<T> {
 
     /// Converts a 2d grid position to it's corresponding 1D index.
     #[inline(always)]
-    pub fn pos_to_index(&self, pos: [i32; 2]) -> usize {
-        (pos[1] * self.width() as i32 + pos[0]) as usize
-    }
-
-    /// Converts a 2d grid position to it's corresponding 1D index.
-    #[inline(always)]
-    pub fn upos_to_index(&self, pos: [u32; 2]) -> usize {
-        (pos[1] * self.width() as u32 + pos[0]) as usize
+    pub fn pos_to_index(&self, pos: impl Point2d) -> usize {
+        let [x, y] = pos.to_array();
+        y as usize * self.width() + x as usize
     }
 
     /// Converts a 1d index to it's corresponding grid position.
@@ -190,66 +185,26 @@ impl<T: Clone> Grid<T> {
         IVec2::new(x, y)
     }
 
-    /// Converts a 1d index to it's corresponding grid position.
-    #[inline(always)]
-    pub fn index_to_upos(&self, index: usize) -> UVec2 {
-        self.index_to_pos(index).as_uvec2()
-    }
-
-    /// Returns the index of the top row.
-    #[inline(always)]
-    pub fn top_index(&self) -> usize {
-        (self.height() - 1) as usize
-    }
-
-    /// Returns the index of the bottom row (`0`).
-    #[inline(always)]
-    pub fn bottom_index(&self) -> usize {
-        0
-    }
-
-    /// Returns the index of the left-most column (`0`).
-    #[inline(always)]
-    pub fn left_index(&self) -> usize {
-        0
-    }
-
-    /// Returns the index of the right-most column.
-    #[inline(always)]
-    pub fn right_index(&self) -> usize {
-        (self.width() - 1) as usize
-    }
-
-    /// Get the position of a tile on the grid at the given pivot.
-    ///
-    /// Note that for even-sized grids the "center" will be rounded down.
-    /// For example, for a a 4x4 grid calling `pivot_position(Pivot::Center)` will return `(1,1)`.
+    /// Get the position of the given pivot point on the grid.
     pub fn pivot_position(&self, pivot: Pivot) -> IVec2 {
-        match pivot {
-            Pivot::TopLeft => IVec2::new(0, self.top_index() as i32),
-            Pivot::TopRight => IVec2::new(self.right_index() as i32, self.top_index() as i32),
-            Pivot::Center => {
-                let tr = self.pivot_position(Pivot::TopRight);
-                (tr.as_vec2() / 2.0).as_ivec2()
-            }
-            Pivot::BottomLeft => IVec2::ZERO,
-            Pivot::BottomRight => IVec2::new(self.right_index() as i32, 0),
-        }
+        let size = self.size().as_vec2() - Vec2::ONE;
+        let pivot = Vec2::from(pivot);
+        (size * pivot).floor().as_ivec2()
     }
 
     #[inline]
-    pub fn is_in_bounds(&self, pos: IVec2) -> bool {
-        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
+    pub fn in_bounds(&self, pos: IVec2) -> bool {
+        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size()).all()
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn debug_bounds_check(&self, pos: IVec2) {
-        debug_assert!(
-            self.is_in_bounds(pos),
-            "Position {} is out of grid bounds {}",
-            pos,
-            self.size()
-        );
+    /// Gets the index for a given side.
+    pub fn side_index(&self, side: Side) -> usize {
+        match side {
+            Side::Left => 0,
+            Side::Top => self.height() - 1,
+            Side::Right => self.width() - 1,
+            Side::Bottom => 0,
+        }
     }
 
     /// An iterator over a rectangular portion of the grid defined by the given range.
@@ -259,10 +214,10 @@ impl<T: Clone> Grid<T> {
         &self,
         range: RANGE,
     ) -> impl Iterator<Item = (IVec2, &T)> {
-        let (min, max) = ranges_to_min_max(range, self.size().as_ivec2());
+        let (min, max) = ranges_to_min_max(range, self.size());
         (min.y..=max.y)
             .cartesian_product(min.x..=max.x)
-            .map(|(y, x)| ((IVec2::new(x, y)), &self[[x as u32, y as u32]]))
+            .map(|(y, x)| ((IVec2::new(x, y)), &self[[x, y]]))
     }
 
     /// Returns an iterator which enumerates the 2d position of every value in the grid.
@@ -285,17 +240,17 @@ impl<T: Clone> Grid<T> {
             .zip(self.data.iter_mut())
     }
 
-    /// Creates a [crate::world_grid::WorldGrid] from this grid with the given pivot. This can be used to translate
-    /// between grid points and world space.
-    pub fn to_world_pivot(&self, pivot: Pivot) -> WorldGrid {
-        WorldGrid::origin(self.size.into(), pivot)
-    }
+    // /// Creates a [crate::world_grid::WorldGrid] from this grid with the given pivot. This can be used to translate
+    // /// between grid points and world space.
+    // pub fn to_world_pivot(&self, pivot: Pivot) -> WorldGrid {
+    //     WorldGrid::origin(self.size.into(), pivot)
+    // }
 
-    /// Creates a [crate::world_grid::WorldGrid] from this grid with the default bottom left pivot. This can be used to translate
-    /// between grid points and world space.
-    pub fn to_world(&self) -> WorldGrid {
-        self.to_world_pivot(Pivot::BottomLeft)
-    }
+    // /// Creates a [crate::world_grid::WorldGrid] from this grid with the default bottom left pivot. This can be used to translate
+    // /// between grid points and world space.
+    // pub fn to_world(&self) -> WorldGrid {
+    //     self.to_world_pivot(Pivot::BottomLeft)
+    // }
 
     pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {
         let (min, max) = ranges_to_min_max_usize(slice, self.len());
@@ -334,12 +289,13 @@ impl<T: Clone> Grid<T> {
     /// Final index along a given axis, where 0 == width, and 1 == height.
     pub fn axis_index(&self, axis: usize) -> usize {
         match axis {
-            0 => self.right_index(),
-            1 => self.top_index(),
+            0 => self.side_index(Side::Right),
+            1 => self.side_index(Side::Top),
             _ => panic!("Invalid grid axis {}", axis),
         }
     }
 
+    // Size of the grid along a given axis, where 0 == x and 1 == y
     pub fn axis_size(&self, axis: usize) -> usize {
         match axis {
             0 => self.width() as usize,
@@ -405,70 +361,47 @@ fn ranges_to_min_max<RANGE: RangeBounds<[i32; 2]>>(range: RANGE, max: IVec2) -> 
     (min, max)
 }
 
-impl<T: Clone> Index<[u32; 2]> for Grid<T> {
+impl<T: Clone, P: Point2d> Index<P> for Grid<T> {
     type Output = T;
 
-    #[inline(always)]
-    fn index(&self, index: [u32; 2]) -> &Self::Output {
-        &self.data[self.upos_to_index(index)]
+    fn index(&self, p: P) -> &Self::Output {
+        let i = self.pos_to_index(p);
+        &self.data[i]
     }
 }
 
-impl<T: Clone> IndexMut<[u32; 2]> for Grid<T> {
-    #[inline(always)]
-    fn index_mut(&mut self, pos: [u32; 2]) -> &mut Self::Output {
-        let index = self.upos_to_index(pos);
-        &mut self.data[index]
+impl<T: Clone, P: Point2d> IndexMut<P> for Grid<T>
+where
+    T: Default,
+{
+    fn index_mut(&mut self, index: P) -> &mut T {
+        let xy = index.xy();
+        let i = self.pos_to_index(xy);
+        &mut self.data[i]
     }
 }
 
 impl<T: Clone> Index<usize> for Grid<T> {
     type Output = T;
 
-    #[inline(always)]
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
+    fn index(&self, i: usize) -> &Self::Output {
+        &self.data[i]
     }
 }
-
-impl<T: Clone> IndexMut<usize> for Grid<T> {
-    #[inline(always)]
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+impl<T: Clone> IndexMut<usize> for Grid<T>
+where
+    T: Default,
+{
+    fn index_mut(&mut self, index: usize) -> &mut T {
         &mut self.data[index]
     }
 }
 
-impl<T: Clone> Index<IVec2> for Grid<T> {
-    type Output = T;
-
-    #[inline(always)]
-    fn index(&self, index: IVec2) -> &Self::Output {
-        &self.data[self.pos_to_index(index.into())]
-    }
-}
-
-impl<T: Clone> IndexMut<IVec2> for Grid<T> {
-    #[inline(always)]
-    fn index_mut(&mut self, index: IVec2) -> &mut Self::Output {
-        let index = self.pos_to_index(index.into());
-        &mut self.data[index]
-    }
-}
-impl<T: Clone> Index<UVec2> for Grid<T> {
-    type Output = T;
-
-    #[inline(always)]
-    fn index(&self, index: UVec2) -> &Self::Output {
-        &self.data[self.upos_to_index(index.into())]
-    }
-}
-
-impl<T: Clone> IndexMut<UVec2> for Grid<T> {
-    #[inline(always)]
-    fn index_mut(&mut self, index: UVec2) -> &mut Self::Output {
-        let index = self.upos_to_index(index.into());
-        &mut self.data[index]
-    }
+pub enum Side {
+    Left,
+    Top,
+    Right,
+    Bottom,
 }
 
 #[cfg(test)]
