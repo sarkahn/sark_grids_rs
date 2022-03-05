@@ -459,7 +459,6 @@ mod test {
     }
 }
 
-
 /// A pivot point on a 2d rect.
 #[derive(Eq, PartialEq, Clone, Copy)]
 pub enum Pivot {

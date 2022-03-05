@@ -32,7 +32,10 @@ use std::{
 use glam::{IVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{point::{GridPoint, Size2d}, world_grid::Pivot};
+use crate::{
+    point::{GridPoint, Size2d},
+    world_grid::Pivot,
+};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///

@@ -27,7 +27,7 @@ macro_rules! impl_grid_point {
             fn x(&self) -> i32 {
                 self[0] as i32
             }
-        
+
             fn y(&self) -> i32 {
                 self[1] as i32
             }
@@ -45,7 +45,7 @@ impl GridPoint for IVec2 {
     }
 }
 
-impl GridPoint for [i32;2] {
+impl GridPoint for [i32; 2] {
     fn x(&self) -> i32 {
         self[0]
     }
@@ -57,8 +57,8 @@ impl GridPoint for [i32;2] {
 
 impl_grid_point!(UVec2);
 impl_grid_point!(Vec2);
-impl_grid_point!([u32;2]);
-impl_grid_point!([f32;2]);
+impl_grid_point!([u32; 2]);
+impl_grid_point!([f32; 2]);
 
 #[allow(clippy::len_without_is_empty)]
 /// A trait for mixing of the different types representing a 2d size.
@@ -92,7 +92,7 @@ macro_rules! impl_size2d {
             fn width(&self) -> usize {
                 self[0] as usize
             }
-        
+
             fn height(&self) -> usize {
                 self[1] as usize
             }
@@ -103,9 +103,9 @@ macro_rules! impl_size2d {
 impl_size2d!(IVec2);
 impl_size2d!(UVec2);
 impl_size2d!(Vec2);
-impl_size2d!([u32;2]);
-impl_size2d!([i32;2]);
-impl_size2d!([f32;2]);
+impl_size2d!([u32; 2]);
+impl_size2d!([i32; 2]);
+impl_size2d!([f32; 2]);
 
 /// A trait for an arbitrary 2d point.
 pub trait Point2d {
@@ -136,7 +136,7 @@ impl Point2d for Vec2 {
     }
 }
 
-impl Point2d for [f32;2] {
+impl Point2d for [f32; 2] {
     fn x(&self) -> f32 {
         self[0]
     }
@@ -152,7 +152,7 @@ macro_rules! impl_point2d {
             fn x(&self) -> f32 {
                 self[0] as f32
             }
-        
+
             fn y(&self) -> f32 {
                 self[1] as f32
             }
@@ -162,5 +162,5 @@ macro_rules! impl_point2d {
 
 impl_point2d!(IVec2);
 impl_point2d!(UVec2);
-impl_point2d!([u32;2]);
-impl_point2d!([i32;2]);
+impl_point2d!([u32; 2]);
+impl_point2d!([i32; 2]);
