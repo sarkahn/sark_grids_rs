@@ -62,8 +62,8 @@ pub struct WorldGrid {
 
 impl WorldGrid {
     pub fn new(world_pos: impl Point2d, size: impl Size2d, pivot: Pivot) -> Self {
-        let world_pos = world_pos.xy();
-        let size = size.xy();
+        let world_pos = world_pos.as_ivec2();
+        let size = size.as_ivec2();
 
         let center_offset = match pivot {
             Pivot::Center => Vec2::select(
@@ -103,14 +103,14 @@ impl WorldGrid {
     /// A tile's "position" refers to the bottom left point on the tile.
     #[inline]
     pub fn tile_pos(&self, grid_pos: impl Point2d) -> Vec2 {
-        let grid_pos = grid_pos.xy().as_vec2();
+        let grid_pos = grid_pos.as_ivec2().as_vec2();
         grid_pos + self.pos_offset
     }
 
     /// Returns the center point of a given tile.
     #[inline]
     pub fn tile_center(&self, grid_pos: impl Point2d) -> Vec2 {
-        let grid_pos = grid_pos.xy().as_vec2();
+        let grid_pos = grid_pos.as_ivec2().as_vec2();
         grid_pos + self.center_offset
     }
 
@@ -140,7 +140,7 @@ impl WorldGrid {
     /// Whether or not the given 2d index is inside the grid bounds.
     #[inline]
     pub fn index_2d_in_bounds(&self, index: impl Point2d) -> bool {
-        let index = index.xy();
+        let index = index.as_ivec2();
         index.cmpge(IVec2::ZERO).all() && index.cmplt(self.size()).all()
     }
 
@@ -169,7 +169,7 @@ impl WorldGrid {
 
     /// Convert from a 2d index to it's corresponding grid position.
     pub fn index_2d_to_grid(&self, i: impl Point2d) -> IVec2 {
-        let p = i.xy().as_vec2();
+        let p = i.as_ivec2().as_vec2();
         let p = (self.pivot_offset - self.pos_offset) + p;
         let p = p + self.center_offset;
         let p = (p * self.axis).floor();

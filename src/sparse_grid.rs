@@ -47,7 +47,7 @@ impl<T: Clone> SparseGrid<T> {
     pub fn new(size: impl Size2d) -> Self {
         Self {
             data: BTreeMap::new(),
-            size: size.xy(),
+            size: size.as_ivec2(),
         }
     }
 
@@ -226,7 +226,7 @@ impl<T: Clone> SparseGrid<T> {
     }
 
     pub fn is_in_bounds(&self, pos: impl Point2d) -> bool {
-        let xy = pos.xy();
+        let xy = pos.as_ivec2();
         xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.size).all()
     }
 
@@ -245,7 +245,7 @@ impl<T: Clone> SparseGrid<T> {
     /// is returned.
     #[inline]
     pub fn insert(&mut self, pos: impl Point2d, value: T) -> Option<T> {
-        let pos = pos.xy();
+        let pos = pos.as_ivec2();
         let i = self.pos_to_index(pos);
         self.data.insert(i, value)
     }
@@ -271,7 +271,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Returns `None` if there is no value at the position.
     #[inline]
     pub fn get(&self, pos: impl Point2d) -> Option<&T> {
-        let i = self.pos_to_index(pos.xy());
+        let i = self.pos_to_index(pos.as_ivec2());
         self.get_index(i)
     }
 
@@ -280,7 +280,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Returns `None` if there is no value at the position.
     #[inline]
     pub fn get_mut(&mut self, pos: impl Point2d) -> Option<&mut T> {
-        let i = self.pos_to_index(pos.xy());
+        let i = self.pos_to_index(pos.as_ivec2());
         self.data.get_mut(&i)
     }
 }
@@ -289,7 +289,7 @@ impl<T: Clone, P: Point2d> Index<P> for SparseGrid<T> {
     type Output = T;
 
     fn index(&self, index: P) -> &Self::Output {
-        let xy = index.xy();
+        let xy = index.as_ivec2();
         let i = self.pos_to_index(xy);
         &self.data[&i]
     }
@@ -300,7 +300,7 @@ where
     T: Default,
 {
     fn index_mut(&mut self, index: P) -> &mut T {
-        let xy = index.xy();
+        let xy = index.as_ivec2();
         let i = self.pos_to_index(xy);
         &mut *self.data.entry(i).or_default()
     }

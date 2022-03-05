@@ -47,7 +47,7 @@ pub struct Grid<T: Clone> {
 impl<T: Clone> Grid<T> {
     /// Creates a new [Grid<T>] with the given default value set for all elements.
     pub fn new(value: T, size: impl Size2d) -> Self {
-        let size = size.xy();
+        let size = size.as_ivec2();
         let len = (size.x * size.y) as usize;
 
         Self {
@@ -375,7 +375,7 @@ where
     T: Default,
 {
     fn index_mut(&mut self, index: P) -> &mut T {
-        let xy = index.xy();
+        let xy = index.as_ivec2();
         let i = self.pos_to_index(xy);
         &mut self.data[i]
     }
