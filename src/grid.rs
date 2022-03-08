@@ -29,12 +29,11 @@ use std::{
     slice::{ChunksMut, Iter, IterMut},
 };
 
-use glam::{IVec2, Vec2};
+use glam::{IVec2, Vec2, UVec2};
 use itertools::Itertools;
 
 use crate::{
     point::{GridPoint, Size2d},
-    world_grid::Pivot,
 };
 
 /// A dense sized grid that stores it's elements in a `Vec`.
@@ -44,13 +43,13 @@ use crate::{
 #[derive(Default, Debug, Clone)]
 pub struct Grid<T: Clone> {
     data: Vec<T>,
-    size: IVec2,
+    size: UVec2,
 }
 
 impl<T: Clone> Grid<T> {
     /// Creates a new [Grid<T>] with the given default value set for all elements.
     pub fn new(value: T, size: impl Size2d) -> Self {
-        let size = size.as_ivec2();
+        let size = size.as_uvec2();
         let len = (size.x * size.y) as usize;
 
         Self {
@@ -161,7 +160,7 @@ impl<T: Clone> Grid<T> {
         self.size.y as usize
     }
 
-    pub fn size(&self) -> IVec2 {
+    pub fn size(&self) -> UVec2 {
         self.size
     }
 
@@ -189,7 +188,7 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Get the position of the given pivot point on the grid.
-    pub fn pivot_position(&self, pivot: Pivot) -> IVec2 {
+    pub fn pivot_position(&self, pivot: crate::world_grid::Pivot) -> IVec2 {
         let size = self.size().as_vec2() - Vec2::ONE;
         let pivot = Vec2::from(pivot);
         (size * pivot).floor().as_ivec2()
@@ -197,7 +196,7 @@ impl<T: Clone> Grid<T> {
 
     #[inline]
     pub fn in_bounds(&self, pos: IVec2) -> bool {
-        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size()).all()
+        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
     }
 
     /// Gets the index for a given side.
@@ -217,7 +216,7 @@ impl<T: Clone> Grid<T> {
         &self,
         range: RANGE,
     ) -> impl Iterator<Item = (IVec2, &T)> {
-        let (min, max) = ranges_to_min_max(range, self.size());
+        let (min, max) = ranges_to_min_max(range, self.size().as_ivec2());
         (min.y..=max.y)
             .cartesian_product(min.x..=max.x)
             .map(|(y, x)| ((IVec2::new(x, y)), &self[[x, y]]))
@@ -243,17 +242,17 @@ impl<T: Clone> Grid<T> {
             .zip(self.data.iter_mut())
     }
 
-    // /// Creates a [crate::world_grid::WorldGrid] from this grid with the given pivot. This can be used to translate
-    // /// between grid points and world space.
-    // pub fn to_world_pivot(&self, pivot: Pivot) -> WorldGrid {
-    //     WorldGrid::origin(self.size.into(), pivot)
-    // }
+    /// Creates a [crate::world_grid::WorldGrid] from this grid with the given pivot. This can be used to translate
+    /// between grid points and world space.
+    pub fn to_world_pivot(&self, pivot: crate::world_grid::Pivot) -> crate::world_grid::WorldGrid {
+        crate::world_grid::WorldGrid::new(self.size, pivot)
+    }
 
-    // /// Creates a [crate::world_grid::WorldGrid] from this grid with the default bottom left pivot. This can be used to translate
-    // /// between grid points and world space.
-    // pub fn to_world(&self) -> WorldGrid {
-    //     self.to_world_pivot(Pivot::BottomLeft)
-    // }
+    /// Creates a [crate::world_grid::WorldGrid] from this grid with the default bottom left pivot. This can be used to translate
+    /// between grid points and world space.
+    pub fn to_world(&self) -> crate::world_grid::WorldGrid {
+        self.to_world_pivot(crate::world_grid::Pivot::BottomLeft)
+    }
 
     pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {
         let (min, max) = ranges_to_min_max_usize(slice, self.len());

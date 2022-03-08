@@ -10,3 +10,4 @@ pub use point::GridPoint;
 pub use point::Size2d;
 pub use sparse_grid::SparseGrid;
 pub use world_grid::WorldGrid;
+pub use world_grid::Pivot;

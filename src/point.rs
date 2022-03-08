@@ -2,7 +2,7 @@
 
 use glam::{IVec2, UVec2, Vec2};
 
-/// A trait for a point on a 2d grid.
+/// A trait for an integer point on a 2d grid.
 pub trait GridPoint: Clone + Copy {
     fn x(&self) -> i32;
     fn y(&self) -> i32;
@@ -56,9 +56,7 @@ impl GridPoint for [i32; 2] {
 }
 
 impl_grid_point!(UVec2);
-impl_grid_point!(Vec2);
 impl_grid_point!([u32; 2]);
-impl_grid_point!([f32; 2]);
 
 #[allow(clippy::len_without_is_empty)]
 /// A trait for mixing of the different types representing a 2d size.
@@ -102,10 +100,8 @@ macro_rules! impl_size2d {
 
 impl_size2d!(IVec2);
 impl_size2d!(UVec2);
-impl_size2d!(Vec2);
 impl_size2d!([u32; 2]);
 impl_size2d!([i32; 2]);
-impl_size2d!([f32; 2]);
 
 /// A trait for an arbitrary 2d point.
 pub trait Point2d {

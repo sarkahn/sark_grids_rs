@@ -1,6 +1,6 @@
 //! A grid that stores it's internal data in a `BTreeMap`. Elements don't take up any memory until
 //! they're inserted, and can be removed as needed, but iteration and access speed will be slower
-//! than a `Grid` for large full grids.
+//! than a [crate::grid::Grid] for large full grids.
 //!
 //! Elements can be inserted and accessed via their 1d index or 2d index, or
 //! read/modified via iterators.
@@ -31,7 +31,7 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-use glam::IVec2;
+use glam::{IVec2, UVec2};
 
 use crate::{grid::Side, point::*};
 
@@ -39,7 +39,7 @@ use crate::{grid::Side, point::*};
 #[derive(Default, Debug, Clone)]
 pub struct SparseGrid<T: Clone> {
     data: BTreeMap<usize, T>,
-    size: IVec2,
+    size: UVec2,
 }
 
 impl<T: Clone> SparseGrid<T> {
@@ -47,7 +47,7 @@ impl<T: Clone> SparseGrid<T> {
     pub fn new(size: impl Size2d) -> Self {
         Self {
             data: BTreeMap::new(),
-            size: size.as_ivec2(),
+            size: size.as_uvec2(),
         }
     }
 
@@ -225,12 +225,13 @@ impl<T: Clone> SparseGrid<T> {
         }
     }
 
+    #[inline(always)]
     pub fn is_in_bounds(&self, pos: impl GridPoint) -> bool {
         let xy = pos.as_ivec2();
-        xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.size).all()
+        xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.size.as_ivec2()).all()
     }
 
-    /// Insert a value in the grid.
+    /// Insert a value in the grid at the given 1d index.
     ///
     /// Returns `None` if no value was already present. Otherwise the old value
     /// is returned.
