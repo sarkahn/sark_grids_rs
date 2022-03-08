@@ -29,12 +29,10 @@ use std::{
     slice::{ChunksMut, Iter, IterMut},
 };
 
-use glam::{IVec2, Vec2, UVec2};
+use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{
-    point::{GridPoint, Size2d},
-};
+use crate::point::{GridPoint, Size2d};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///

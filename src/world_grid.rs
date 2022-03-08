@@ -40,9 +40,9 @@
 
 use itertools::Itertools;
 
-use glam::{IVec2, Vec2, UVec2};
+use glam::{IVec2, UVec2, Vec2};
 
-use crate::point::{GridPoint, Size2d, Point2d};
+use crate::point::{GridPoint, Point2d, Size2d};
 
 /// A sized grid with a custom pivot for translating between aligned grid points
 /// and world space.
@@ -163,7 +163,7 @@ impl WorldGrid {
         xy.floor() + self.center_offset
     }
 
-    /// Convert a world position to it's local position on the grid 
+    /// Convert a world position to it's local position on the grid
     /// (it's position relative to the grid's pivot).
     #[inline]
     pub fn world_to_local(&self, point: impl Point2d) -> Vec2 {
@@ -405,16 +405,28 @@ mod test {
     fn top_right_tile_center() {
         let grid = WorldGrid::new([3, 3], Pivot::TopRight);
 
-        assert_eq!([-0.5, -0.5], grid.tile_center_from_index2d([-1, -1]).to_array());
-        assert_eq!([-1.5, -1.5], grid.tile_center_from_index2d([-2, -2]).to_array());
+        assert_eq!(
+            [-0.5, -0.5],
+            grid.tile_center_from_index2d([-1, -1]).to_array()
+        );
+        assert_eq!(
+            [-1.5, -1.5],
+            grid.tile_center_from_index2d([-2, -2]).to_array()
+        );
     }
 
     #[test]
     fn top_left_tile_center() {
         let grid = WorldGrid::new([3, 3], Pivot::TopLeft);
 
-        assert_eq!([0.5, -0.5], grid.tile_center_from_index2d([0, -1]).to_array());
-        assert_eq!([1.5, -1.5], grid.tile_center_from_index2d([1, -2]).to_array());
+        assert_eq!(
+            [0.5, -0.5],
+            grid.tile_center_from_index2d([0, -1]).to_array()
+        );
+        assert_eq!(
+            [1.5, -1.5],
+            grid.tile_center_from_index2d([1, -2]).to_array()
+        );
     }
 
     #[test]
@@ -422,7 +434,10 @@ mod test {
         let grid = WorldGrid::new([3, 3], Pivot::Center);
 
         assert_eq!([0.0, 0.0], grid.tile_center_from_index2d([0, 0]).to_array());
-        assert_eq!([-1.0, -1.0], grid.tile_center_from_index2d([-1, -1]).to_array());
+        assert_eq!(
+            [-1.0, -1.0],
+            grid.tile_center_from_index2d([-1, -1]).to_array()
+        );
     }
 
     #[test]
@@ -438,7 +453,10 @@ mod test {
         let grid = WorldGrid::new([3, 3], Pivot::Center);
 
         assert_eq!([-0.5, -0.5], grid.tile_pos_from_index2d([0, 0]).to_array());
-        assert_eq!([-1.5, -1.5], grid.tile_pos_from_index2d([-1, -1]).to_array());
+        assert_eq!(
+            [-1.5, -1.5],
+            grid.tile_pos_from_index2d([-1, -1]).to_array()
+        );
     }
 
     #[test]
@@ -446,14 +464,20 @@ mod test {
         let grid = WorldGrid::new([4, 4], Pivot::Center);
 
         assert_eq!([0.0, 0.0], grid.tile_pos_from_index2d([0, 0]).to_array());
-        assert_eq!([-1.0, -1.0], grid.tile_pos_from_index2d([-1, -1]).to_array());
+        assert_eq!(
+            [-1.0, -1.0],
+            grid.tile_pos_from_index2d([-1, -1]).to_array()
+        );
     }
 
     #[test]
     fn to_tile_center() {
-        let grid = WorldGrid::new([4,4], Pivot::Center);
+        let grid = WorldGrid::new([4, 4], Pivot::Center);
 
-        assert_eq!([0.5,0.5], grid.point_to_tile_center([0.75,0.75]).to_array());
+        assert_eq!(
+            [0.5, 0.5],
+            grid.point_to_tile_center([0.75, 0.75]).to_array()
+        );
     }
 }
 
