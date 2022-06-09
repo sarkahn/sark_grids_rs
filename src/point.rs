@@ -21,6 +21,11 @@ pub trait GridPoint: Clone + Copy {
     fn to_array(&self) -> [i32; 2] {
         self.as_ivec2().to_array()
     }
+
+    /// Return a [PivotedPoint] from this [GridPoint].
+    fn pivot(&self, pivot: Pivot) -> PivotedPoint {
+        PivotedPoint { point: self.as_ivec2(), pivot }
+    }
 }
 
 macro_rules! impl_grid_point {
@@ -37,28 +42,10 @@ macro_rules! impl_grid_point {
     };
 }
 
-impl GridPoint for IVec2 {
-    fn x(&self) -> i32 {
-        self.x
-    }
-
-    fn y(&self) -> i32 {
-        self.y
-    }
-}
-
-impl GridPoint for [i32; 2] {
-    fn x(&self) -> i32 {
-        self[0]
-    }
-
-    fn y(&self) -> i32 {
-        self[1]
-    }
-}
-
+impl_grid_point!(IVec2);
 impl_grid_point!(UVec2);
 impl_grid_point!([u32; 2]);
+impl_grid_point!([i32; 2]);
 
 #[allow(clippy::len_without_is_empty)]
 /// A trait for mixing of the different types representing a 2d size.
@@ -66,21 +53,26 @@ pub trait Size2d: Clone + Copy {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
 
+    #[inline]
     fn as_uvec2(&self) -> UVec2 {
         UVec2::new(self.width() as u32, self.height() as u32)
     }
 
+    #[inline]
     fn len(&self) -> usize {
         self.width() * self.height()
     }
 
+    #[inline]
     fn as_vec2(&self) -> Vec2 {
         self.as_uvec2().as_vec2()
     }
 
+    #[inline]
     fn as_ivec2(&self) -> IVec2 {
         self.as_uvec2().as_ivec2()
     }
+    #[inline]
     fn to_array(&self) -> [usize; 2] {
         [self.width(), self.height()]
     }
@@ -124,26 +116,6 @@ pub trait Point2d {
     }
 }
 
-impl Point2d for Vec2 {
-    fn x(&self) -> f32 {
-        self.x
-    }
-
-    fn y(&self) -> f32 {
-        self.y
-    }
-}
-
-impl Point2d for [f32; 2] {
-    fn x(&self) -> f32 {
-        self[0]
-    }
-
-    fn y(&self) -> f32 {
-        self[1]
-    }
-}
-
 macro_rules! impl_point2d {
     ($type:ty) => {
         impl Point2d for $type {
@@ -158,12 +130,55 @@ macro_rules! impl_point2d {
     };
 }
 
+impl_point2d!(Vec2);
 impl_point2d!(IVec2);
 impl_point2d!(UVec2);
 impl_point2d!([u32; 2]);
 impl_point2d!([i32; 2]);
+impl_point2d!([f32; 2]);
 
+/// A 2d point on a rect aligned to a certain [Pivot].
+#[derive(Clone, Copy)]
 pub struct PivotedPoint {
     point: IVec2,
     pivot: Pivot,
+}
+
+impl PivotedPoint {
+    #[inline]
+    /// Returns the point, as aligned by it's associated pivot, within a grid of the given size.
+    pub fn aligned_point(&self, size: impl Size2d) -> IVec2 {
+        self.pivot.pivot_aligned_point(self.point, size)
+    }
+
+    /// Returns the point from the perspective of the pivot.
+    pub fn pivot_point(&self) -> IVec2 {
+        self.point
+    }
+}
+
+impl GridPoint for PivotedPoint {
+    #[inline]
+    fn x(&self) -> i32 {
+        self.point.x
+    }
+
+    #[inline]
+    fn y(&self) -> i32 {
+        self.point.y
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pivot_point() {
+        let p = [0,0].pivot(Pivot::TopRight);
+        assert_eq!([9,9], p.aligned_point([10,10]).to_array());
+
+        let p = [3,3].pivot(Pivot::TopLeft);
+        assert_eq!([3,6], p.aligned_point([10,10]).to_array());
+    }
 }

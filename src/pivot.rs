@@ -29,8 +29,9 @@ impl Pivot {
         }
     }
 
+    #[inline]
     /// Transform a point to it's equivalent from the perspective of
-    /// a pivot on a 2d rect.
+    /// this pivot.
     pub fn pivot_aligned_point(&self, point: impl GridPoint, size: impl Size2d) -> IVec2 {
         let point = point.as_ivec2();
         let align_offset = size.as_ivec2().as_vec2() - Vec2::ONE;
