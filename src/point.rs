@@ -22,13 +22,19 @@ pub trait GridPoint: Clone + Copy {
         self.as_ivec2().to_array()
     }
 
-    /// Return a [PivotedPoint] from this [GridPoint].
+    /// Return a [PivotedPoint].
     fn pivot(&self, pivot: Pivot) -> PivotedPoint {
         PivotedPoint {
             point: self.as_ivec2(),
             pivot,
         }
     }
+
+    /// Retrieve the point aligned on the grid.
+    /// 
+    /// If no pivot has been applied this will simply return the point
+    /// directly.
+    fn aligned(&self, size: impl Size2d) -> IVec2;
 }
 
 macro_rules! impl_grid_point {
@@ -40,6 +46,11 @@ macro_rules! impl_grid_point {
 
             fn y(&self) -> i32 {
                 self[1] as i32
+            }
+
+            /// Returns the point directly - no pivot has been applied.
+            fn aligned(&self, _size: impl Size2d) -> IVec2 {
+                IVec2::new(self[0] as i32, self[1] as i32)
             }
         }
     };
