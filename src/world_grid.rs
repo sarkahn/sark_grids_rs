@@ -42,7 +42,10 @@ use itertools::Itertools;
 
 use glam::{IVec2, UVec2, Vec2};
 
-use crate::{point::{GridPoint, Point2d, Size2d}, Pivot};
+use crate::{
+    point::{GridPoint, Point2d, Size2d},
+    Pivot,
+};
 
 /// A sized grid with a custom pivot for translating between aligned grid points
 /// and world space.
@@ -482,5 +485,3 @@ mod test {
         );
     }
 }
-
-

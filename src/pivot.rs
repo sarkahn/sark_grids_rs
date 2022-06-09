@@ -53,7 +53,6 @@ impl From<Pivot> for Vec2 {
     }
 }
 
-
 /// A 2d point on a rect aligned to a certain [Pivot].
 #[derive(Clone, Copy)]
 pub struct PivotedPoint {
@@ -92,10 +91,10 @@ mod tests {
 
     #[test]
     fn pivot_point() {
-        let p = [0,0].pivot(Pivot::TopRight);
-        assert_eq!([9,9], p.aligned_point([10,10]).to_array());
+        let p = [0, 0].pivot(Pivot::TopRight);
+        assert_eq!([9, 9], p.aligned_point([10, 10]).to_array());
 
-        let p = [3,3].pivot(Pivot::TopLeft);
-        assert_eq!([3,6], p.aligned_point([10,10]).to_array());
+        let p = [3, 3].pivot(Pivot::TopLeft);
+        assert_eq!([3, 6], p.aligned_point([10, 10]).to_array());
     }
 }

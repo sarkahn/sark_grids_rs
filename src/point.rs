@@ -2,7 +2,7 @@
 
 use glam::{IVec2, UVec2, Vec2};
 
-use crate::{Pivot, pivot::PivotedPoint};
+use crate::{pivot::PivotedPoint, Pivot};
 
 /// A trait for an integer point on a 2d grid.
 pub trait GridPoint: Clone + Copy {
@@ -24,7 +24,10 @@ pub trait GridPoint: Clone + Copy {
 
     /// Return a [PivotedPoint] from this [GridPoint].
     fn pivot(&self, pivot: Pivot) -> PivotedPoint {
-        PivotedPoint { point: self.as_ivec2(), pivot }
+        PivotedPoint {
+            point: self.as_ivec2(),
+            pivot,
+        }
     }
 }
 
