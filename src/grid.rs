@@ -32,7 +32,7 @@ use std::{
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::point::{GridPoint, Size2d};
+use crate::{point::{GridPoint, Size2d}, Pivot};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///
@@ -186,7 +186,7 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Get the position of the given pivot point on the grid.
-    pub fn pivot_position(&self, pivot: crate::world_grid::Pivot) -> IVec2 {
+    pub fn pivot_position(&self, pivot: Pivot) -> IVec2 {
         let size = self.size().as_vec2() - Vec2::ONE;
         let pivot = Vec2::from(pivot);
         (size * pivot).floor().as_ivec2()
@@ -242,14 +242,14 @@ impl<T: Clone> Grid<T> {
 
     /// Creates a [crate::world_grid::WorldGrid] from this grid with the given pivot. This can be used to translate
     /// between grid points and world space.
-    pub fn to_world_pivot(&self, pivot: crate::world_grid::Pivot) -> crate::world_grid::WorldGrid {
+    pub fn to_world_pivot(&self, pivot: Pivot) -> crate::world_grid::WorldGrid {
         crate::world_grid::WorldGrid::new(self.size, pivot)
     }
 
     /// Creates a [crate::world_grid::WorldGrid] from this grid with the default bottom left pivot. This can be used to translate
     /// between grid points and world space.
     pub fn to_world(&self) -> crate::world_grid::WorldGrid {
-        self.to_world_pivot(crate::world_grid::Pivot::BottomLeft)
+        self.to_world_pivot(Pivot::BottomLeft)
     }
 
     pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {

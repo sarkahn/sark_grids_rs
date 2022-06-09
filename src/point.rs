@@ -2,6 +2,8 @@
 
 use glam::{IVec2, UVec2, Vec2};
 
+use crate::Pivot;
+
 /// A trait for an integer point on a 2d grid.
 pub trait GridPoint: Clone + Copy {
     fn x(&self) -> i32;
@@ -160,3 +162,8 @@ impl_point2d!(IVec2);
 impl_point2d!(UVec2);
 impl_point2d!([u32; 2]);
 impl_point2d!([i32; 2]);
+
+pub struct PivotedPoint {
+    point: IVec2,
+    pivot: Pivot,
+}
