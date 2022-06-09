@@ -52,3 +52,50 @@ impl From<Pivot> for Vec2 {
         }
     }
 }
+
+
+/// A 2d point on a rect aligned to a certain [Pivot].
+#[derive(Clone, Copy)]
+pub struct PivotedPoint {
+    pub point: IVec2,
+    pub pivot: Pivot,
+}
+
+impl PivotedPoint {
+    #[inline]
+    /// Returns the point, as aligned by it's associated pivot, within a grid of the given size.
+    pub fn aligned_point(&self, size: impl Size2d) -> IVec2 {
+        self.pivot.pivot_aligned_point(self.point, size)
+    }
+
+    /// Returns the point from the perspective of the pivot.
+    pub fn pivot_point(&self) -> IVec2 {
+        self.point
+    }
+}
+
+impl GridPoint for PivotedPoint {
+    #[inline]
+    fn x(&self) -> i32 {
+        self.point.x
+    }
+
+    #[inline]
+    fn y(&self) -> i32 {
+        self.point.y
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pivot_point() {
+        let p = [0,0].pivot(Pivot::TopRight);
+        assert_eq!([9,9], p.aligned_point([10,10]).to_array());
+
+        let p = [3,3].pivot(Pivot::TopLeft);
+        assert_eq!([3,6], p.aligned_point([10,10]).to_array());
+    }
+}
