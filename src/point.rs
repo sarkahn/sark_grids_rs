@@ -31,7 +31,7 @@ pub trait GridPoint: Clone + Copy {
     }
 
     /// Retrieve the point aligned on the grid.
-    /// 
+    ///
     /// If no pivot has been applied this will simply return the point
     /// directly.
     fn aligned(&self, size: impl Size2d) -> IVec2;
