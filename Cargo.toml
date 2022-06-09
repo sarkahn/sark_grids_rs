@@ -1,6 +1,6 @@
 [package]
 name = "sark_grids"
-version = "0.2.7"
+version = "0.3.0"
 edition = "2021"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/sark_grids_rs"
