@@ -30,6 +30,46 @@ pub trait GridPoint: Clone + Copy {
         }
     }
 
+    /// Returns the grid point above this one.
+    fn up(&self) -> IVec2 {
+        IVec2::new(self.x(), self.y() + 1)
+    }
+    
+    /// Returns the grid point the given number of spaces above this one.
+    fn up_by(&self, amount: i32) -> IVec2 {
+        IVec2::new(self.x(), self.y() + amount)
+    }
+
+    /// Returns the grid point below this one.
+    fn down(&self) -> IVec2 {
+        IVec2::new(self.x(), self.y() - 1)
+    }
+
+    /// Returns the grid point the given number of spaces below this one.
+    fn down_by(&self, amount: i32) -> IVec2 {
+        IVec2::new(self.x(), self.y() - amount)
+    }
+    
+    /// Returns the grid point to the right of this one.
+    fn right(&self) -> IVec2 {
+        IVec2::new(self.x() + 1, self.y())
+    }
+
+    /// Returns the grid point the given number of spaces to the right of this one.
+    fn right_by(&self, amount: i32) -> IVec2 {
+        IVec2::new(self.x() + amount, self.y())
+    }
+    
+    /// Returns the grid point to the left of this one.
+    fn left(&self) -> IVec2 {
+        IVec2::new(self.x() - 1, self.y())
+    }
+
+    /// Returns the grid point the given number of spaces to the left of this one.
+    fn left_by(&self, amount: i32) -> IVec2 {
+        IVec2::new(self.x() - amount, self.y())
+    }
+
     /// Retrieve the point aligned on the grid.
     ///
     /// If no pivot has been applied this will simply return the point
