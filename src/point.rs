@@ -34,7 +34,7 @@ pub trait GridPoint: Clone + Copy {
     fn up(&self) -> IVec2 {
         IVec2::new(self.x(), self.y() + 1)
     }
-    
+
     /// Returns the grid point the given number of spaces above this one.
     fn up_by(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x(), self.y() + amount)
@@ -49,7 +49,7 @@ pub trait GridPoint: Clone + Copy {
     fn down_by(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x(), self.y() - amount)
     }
-    
+
     /// Returns the grid point to the right of this one.
     fn right(&self) -> IVec2 {
         IVec2::new(self.x() + 1, self.y())
@@ -59,7 +59,7 @@ pub trait GridPoint: Clone + Copy {
     fn right_by(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x() + amount, self.y())
     }
-    
+
     /// Returns the grid point to the left of this one.
     fn left(&self) -> IVec2 {
         IVec2::new(self.x() - 1, self.y())

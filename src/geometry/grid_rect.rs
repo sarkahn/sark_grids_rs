@@ -1,6 +1,6 @@
-use glam::{UVec2, IVec2};
+use glam::{IVec2, UVec2};
 
-use crate::{Size2d, GridPoint};
+use crate::{GridPoint, Size2d};
 
 use super::GridShape;
 
@@ -13,7 +13,7 @@ impl GridRect {
     pub fn new(pos: impl GridPoint, size: impl Size2d) -> GridRect {
         GridRect {
             position: pos.as_ivec2(),
-            size: size.as_uvec2()
+            size: size.as_uvec2(),
         }
     }
 
@@ -50,14 +50,13 @@ pub struct GridRectIter {
 
 impl GridRectIter {
     pub fn new(rect: &GridRect) -> Self {
-        GridRectIter { 
-            start: rect.position, 
-            curr: rect.position, 
-            end: rect.position + rect.size.as_ivec2()
+        GridRectIter {
+            start: rect.position,
+            curr: rect.position,
+            end: rect.position + rect.size.as_ivec2(),
         }
     }
 }
-
 
 impl Iterator for GridRectIter {
     type Item = IVec2;
@@ -83,7 +82,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let rect = GridRect::new([0,0], [3,3]);
+        let rect = GridRect::new([0, 0], [3, 3]);
         for p in rect.iter() {
             println!("{}", p);
         }

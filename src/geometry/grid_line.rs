@@ -1,10 +1,9 @@
-//https://www.redblobgames.com/grids/line-drawing.html
-use glam::{IVec2, Vec2, BVec2};
+// https://www.redblobgames.com/grids/line-drawing.html
+use glam::{BVec2, IVec2, Vec2};
 
 use crate::GridPoint;
 
 use super::GridShape;
-
 
 /// A simple grid line.
 pub struct GridLine {
@@ -22,7 +21,7 @@ impl GridLine {
 }
 
 impl GridShape for GridLine {
-    type Iterator=LineIter;
+    type Iterator = LineIter;
 
     fn iter(&self) -> Self::Iterator {
         LineIter::new(self)
@@ -53,7 +52,7 @@ impl Iterator for LineIter {
     fn next(&mut self) -> Option<Self::Item> {
         if self.step > self.dist {
             return None;
-        } 
+        }
 
         let t = self.step as f32 / self.dist as f32;
         self.step += 1;
@@ -75,13 +74,13 @@ fn lerp_pos(p1: IVec2, p2: IVec2, t: f32) -> IVec2 {
     let x = lerp(p1.x, p2.x, t);
     let y = lerp(p1.y, p2.y, t);
 
-    Vec2::new(x,y).round().as_ivec2()
+    Vec2::new(x, y).round().as_ivec2()
 }
 
 #[inline]
 fn diag_distance(p1: IVec2, p2: IVec2) -> i32 {
     let d = p2 - p1;
-    
+
     i32::max(d.x.abs(), d.y.abs())
 }
 
@@ -100,7 +99,7 @@ impl GridLineOrthogonal {
 }
 
 impl GridShape for GridLineOrthogonal {
-    type Iterator=LineOrthogonalIter;
+    type Iterator = LineOrthogonalIter;
 
     fn iter(&self) -> Self::Iterator {
         LineOrthogonalIter::new(self)
@@ -123,7 +122,7 @@ impl LineOrthogonalIter {
         let nxy = dxy.abs();
         let sign = dxy.signum();
 
-        LineOrthogonalIter { 
+        LineOrthogonalIter {
             i: Vec2::ZERO,
             nxy,
             sign,
@@ -131,8 +130,7 @@ impl LineOrthogonalIter {
             start: line.start,
             yielded_start: false,
         }
-    } 
-
+    }
 }
 
 impl Iterator for LineOrthogonalIter {
@@ -140,7 +138,7 @@ impl Iterator for LineOrthogonalIter {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.i.cmpge(self.nxy).any() {
-            return None
+            return None;
         }
         if !self.yielded_start {
             self.yielded_start = true;
@@ -172,8 +170,8 @@ mod tests {
 
     #[test]
     fn iter_orthogonal() {
-        let line = GridLine::new([9,4], [0,0]);
-        let mut canvas = Canvas::new([10,5]);
+        let line = GridLine::new([9, 4], [0, 0]);
+        let mut canvas = Canvas::new([10, 5]);
         for p in line.iter() {
             canvas.put(p, '*');
         }

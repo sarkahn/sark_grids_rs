@@ -4,7 +4,6 @@ use glam::UVec2;
 
 use crate::{GridPoint, Size2d};
 
-
 pub struct Canvas {
     size: UVec2,
     string: String,
@@ -12,17 +11,18 @@ pub struct Canvas {
 
 impl Canvas {
     pub fn new(size: impl Size2d) -> Canvas {
-        let mut string = str::repeat(" ", size.len());
+        let string = str::repeat(" ", size.len());
 
         Canvas {
             size: size.as_uvec2(),
-            string
+            string,
         }
     }
 
     pub fn put(&mut self, pos: impl GridPoint, glyph: char) {
         let i = self.to_index(pos);
-        self.string.replace_range(i..i + 1, std::str::from_utf8(&[glyph as u8]).unwrap());
+        self.string
+            .replace_range(i..i + 1, std::str::from_utf8(&[glyph as u8]).unwrap());
     }
 
     fn to_index(&self, point: impl GridPoint) -> usize {
@@ -32,8 +32,13 @@ impl Canvas {
 
     pub fn print(&self) {
         for y in 0..self.size.y {
-            let i = self.to_index([0,y]);
-            let chars = self.string.chars().skip(i).take(self.size.x as usize).collect::<String>();
+            let i = self.to_index([0, y]);
+            let chars = self
+                .string
+                .chars()
+                .skip(i)
+                .take(self.size.x as usize)
+                .collect::<String>();
             println!("{}", chars);
         }
     }
@@ -45,11 +50,11 @@ mod tests {
 
     #[test]
     fn print_test() {
-        let mut canvas = Canvas::new([10,5]);
-        canvas.put([1,1], '*');
-        canvas.put([2,2], '*');
-        canvas.put([3,3], '*');
-        canvas.put([4,4], '*');
+        let mut canvas = Canvas::new([10, 5]);
+        canvas.put([1, 1], '*');
+        canvas.put([2, 2], '*');
+        canvas.put([3, 3], '*');
+        canvas.put([4, 4], '*');
 
         canvas.print();
     }

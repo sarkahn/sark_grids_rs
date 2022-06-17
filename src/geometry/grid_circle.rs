@@ -1,12 +1,11 @@
+// https://www.redblobgames.com/grids/circle-drawing/
 use std::iter::Flatten;
 
-use glam::{Vec2, IVec2};
+use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
 use super::{grid_rect::GridRectIter, GridRect, GridShape};
-//https://www.redblobgames.com/grids/circle-drawing/
-
 
 pub struct GridCircleOutline {
     center: IVec2,
@@ -15,12 +14,15 @@ pub struct GridCircleOutline {
 
 impl GridCircleOutline {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
-        GridCircleOutline { center: center.as_ivec2(), radius }
+        GridCircleOutline {
+            center: center.as_ivec2(),
+            radius,
+        }
     }
 }
 
 impl GridShape for GridCircleOutline {
-    type Iterator=Flatten<EmptyCircleIterator>;
+    type Iterator = Flatten<EmptyCircleIterator>;
 
     fn iter(&self) -> Self::Iterator {
         EmptyCircleIterator::new(self).flatten()
@@ -34,18 +36,20 @@ pub struct GridCircleFilled {
 
 impl GridCircleFilled {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
-        GridCircleFilled { center: center.as_ivec2(), radius }
+        GridCircleFilled {
+            center: center.as_ivec2(),
+            radius,
+        }
     }
 }
 
 impl GridShape for GridCircleFilled {
-    type Iterator=FilledCircleIterator;
+    type Iterator = FilledCircleIterator;
 
     fn iter(&self) -> Self::Iterator {
         FilledCircleIterator::new(self)
     }
 }
-
 
 pub struct EmptyCircleIterator {
     radius: f32,
@@ -69,7 +73,7 @@ impl EmptyCircleIterator {
 }
 
 impl Iterator for EmptyCircleIterator {
-    type Item = [IVec2;8];
+    type Item = [IVec2; 8];
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.r > self.end {
@@ -82,14 +86,14 @@ impl Iterator for EmptyCircleIterator {
         let c = self.center;
         let r = r;
         let points = [
-        Vec2::new(c.x - d, c.y + r).as_ivec2(),
-        Vec2::new(c.x + d, c.y + r).as_ivec2(),
-        Vec2::new(c.x - d, c.y - r).as_ivec2(),
-        Vec2::new(c.x + d, c.y - r).as_ivec2(),
-        Vec2::new(c.x + r, c.y - d).as_ivec2(),
-        Vec2::new(c.x + r, c.y + d).as_ivec2(),
-        Vec2::new(c.x - r, c.y - d).as_ivec2(),
-        Vec2::new(c.x - r, c.y + d).as_ivec2(),
+            Vec2::new(c.x - d, c.y + r).as_ivec2(),
+            Vec2::new(c.x + d, c.y + r).as_ivec2(),
+            Vec2::new(c.x - d, c.y - r).as_ivec2(),
+            Vec2::new(c.x + d, c.y - r).as_ivec2(),
+            Vec2::new(c.x + r, c.y - d).as_ivec2(),
+            Vec2::new(c.x + r, c.y + d).as_ivec2(),
+            Vec2::new(c.x - r, c.y - d).as_ivec2(),
+            Vec2::new(c.x - r, c.y + d).as_ivec2(),
         ];
 
         self.r += 1;
@@ -111,7 +115,7 @@ impl FilledCircleIterator {
         let bl = IVec2::new((c.x - r).floor() as i32, (c.y - r).floor() as i32);
         let tr = IVec2::new((c.x + r).ceil() as i32, (c.y + r).ceil() as i32);
         let iter = GridRect::new(bl, tr - bl).iter();
-        FilledCircleIterator { 
+        FilledCircleIterator {
             iter,
             center: c,
             radius: r,
@@ -123,7 +127,7 @@ impl Iterator for FilledCircleIterator {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(p) = self.iter.next() {
+        for p in self.iter.by_ref() {
             if inside_circle(self.center, p.as_vec2() + 0.5, self.radius) {
                 return Some(p);
             }
@@ -148,15 +152,15 @@ mod tests {
     #[test]
     fn iter_outline() {
         let size = 5;
-        let circle = GridCircleOutline::new([8,8], size);
-        let mut canvas = Canvas::new([50,16]);
+        let circle = GridCircleOutline::new([8, 8], size);
+        let mut canvas = Canvas::new([50, 16]);
 
         for p in circle.iter() {
             canvas.put(p, '*');
         }
 
-        let filled_circle = GridCircleFilled::new([30,8], size);
-        
+        let filled_circle = GridCircleFilled::new([30, 8], size);
+
         for p in filled_circle.iter() {
             canvas.put(p, '*');
         }
