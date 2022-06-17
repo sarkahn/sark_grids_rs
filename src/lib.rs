@@ -5,6 +5,8 @@ pub mod point;
 
 pub mod sparse_grid;
 pub mod world_grid;
+pub mod shape;
+pub mod util;
 
 pub use grid::Grid;
 pub use pivot::Pivot;
