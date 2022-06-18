@@ -26,16 +26,13 @@
 use std::{
     iter::{StepBy, Take},
     ops::{Bound, Index, IndexMut, RangeBounds},
-    slice::{ChunksMut, Iter, IterMut},
+    slice::{Iter, IterMut},
 };
 
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{
-    point::{GridPoint, Size2d},
-    Pivot,
-};
+use crate::*;
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///
@@ -280,7 +277,10 @@ impl<T: Clone> Grid<T> {
     /// Iterate mutably over a range of rows.
     ///
     /// Yields &mut \[`T`\] (Slice of mutable `T`)
-    pub fn rows_iter_mut(&mut self, range: impl RangeBounds<usize>) -> Take<ChunksMut<T>> {
+    pub fn rows_iter_mut(
+        &mut self,
+        range: impl RangeBounds<usize>,
+    ) -> impl Iterator<Item = &mut [T]> {
         let [start, end] = self.range_to_start_end(range, 1);
         let width = self.width() as usize;
         let x = start * width;

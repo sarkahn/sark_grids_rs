@@ -75,6 +75,13 @@ pub trait GridPoint: Clone + Copy {
     /// If no pivot has been applied this will simply return the point
     /// directly.
     fn aligned(&self, size: impl Size2d) -> IVec2;
+
+    #[inline]
+    /// The [taxicab distance](https://en.wikipedia.org/wiki/Taxicab_geometry) between two grid points.
+    fn taxi_dist(self, other: impl GridPoint) -> usize {
+        let d = self.as_ivec2() - other.as_ivec2();
+        (d.x.abs() + d.y.abs()) as usize
+    }
 }
 
 macro_rules! impl_grid_point {
@@ -190,3 +197,17 @@ impl_point2d!(UVec2);
 impl_point2d!([u32; 2]);
 impl_point2d!([i32; 2]);
 impl_point2d!([f32; 2]);
+
+#[cfg(test)]
+mod tests {
+    use crate::GridPoint;
+
+    #[test]
+    fn taxi() {
+        let a = [10, 10];
+        let b = [20, 20];
+
+        let dist = GridPoint::taxi_dist(a, b);
+        println!("{}", dist);
+    }
+}

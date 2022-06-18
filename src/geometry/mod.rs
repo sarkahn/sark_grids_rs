@@ -1,9 +1,9 @@
 //! Utilities for building geometric shapes on a grid.
 use glam::IVec2;
 
-mod grid_circle;
-mod grid_line;
-mod grid_rect;
+pub mod grid_circle;
+pub mod grid_line;
+pub mod grid_rect;
 
 pub use grid_circle::GridCircleFilled;
 pub use grid_circle::GridCircleOutline;
