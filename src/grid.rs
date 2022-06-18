@@ -24,7 +24,7 @@
 //! ```
 
 use std::{
-    iter::{StepBy, Take},
+    iter::{StepBy},
     ops::{Bound, Index, IndexMut, RangeBounds},
     slice::{Iter, IterMut},
 };
