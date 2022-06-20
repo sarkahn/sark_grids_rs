@@ -21,6 +21,11 @@ pub trait GridPoint: Clone + Copy {
     fn to_array(&self) -> [i32; 2] {
         self.as_ivec2().to_array()
     }
+    #[inline]
+    fn to_usize_array(&self) -> [usize;2] {
+        let p = self.as_uvec2();
+        [p.x as usize, p.y as usize]
+    }
 
     /// Return a [PivotedPoint].
     fn pivot(&self, pivot: Pivot) -> PivotedPoint {
@@ -107,6 +112,7 @@ impl_grid_point!(IVec2);
 impl_grid_point!(UVec2);
 impl_grid_point!([u32; 2]);
 impl_grid_point!([i32; 2]);
+impl_grid_point!([usize; 2]);
 
 #[allow(clippy::len_without_is_empty)]
 /// A trait for mixing of the different types representing a 2d size.
@@ -137,6 +143,11 @@ pub trait Size2d: Clone + Copy {
     fn to_array(&self) -> [usize; 2] {
         [self.width(), self.height()]
     }
+    #[inline]
+    fn to_usize_array(&self) -> [usize;2] {
+        let p = self.as_uvec2();
+        [p.x as usize, p.y as usize]
+    }
 }
 
 macro_rules! impl_size2d {
@@ -157,6 +168,7 @@ impl_size2d!(IVec2);
 impl_size2d!(UVec2);
 impl_size2d!([u32; 2]);
 impl_size2d!([i32; 2]);
+impl_size2d!([usize; 2]);
 
 /// A trait for an arbitrary 2d point.
 pub trait Point2d {
@@ -174,6 +186,10 @@ pub trait Point2d {
     }
     fn to_array(&self) -> [f32; 2] {
         self.as_vec2().to_array()
+    }
+    fn to_usize_array(&self) -> [usize;2] {
+        let p = self.as_uvec2();
+        [p.x as usize, p.y as usize]
     }
 }
 
@@ -197,6 +213,7 @@ impl_point2d!(UVec2);
 impl_point2d!([u32; 2]);
 impl_point2d!([i32; 2]);
 impl_point2d!([f32; 2]);
+impl_point2d!([usize; 2]);
 
 #[cfg(test)]
 mod tests {
