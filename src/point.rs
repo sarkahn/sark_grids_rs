@@ -146,11 +146,11 @@ pub trait Size2d: Clone + Copy {
         self.as_uvec2().as_ivec2()
     }
     #[inline]
-    fn to_array(&self) -> [usize; 2] {
+    fn as_array(&self) -> [usize; 2] {
         [self.width(), self.height()]
     }
     #[inline]
-    fn to_usize_array(&self) -> [usize; 2] {
+    fn as_usize_array(&self) -> [usize; 2] {
         let p = self.as_uvec2();
         [p.x as usize, p.y as usize]
     }
@@ -190,10 +190,10 @@ pub trait Point2d {
     fn as_vec2(&self) -> Vec2 {
         Vec2::new(self.x(), self.y())
     }
-    fn to_array(&self) -> [f32; 2] {
+    fn as_array(&self) -> [f32; 2] {
         self.as_vec2().to_array()
     }
-    fn to_usize_array(&self) -> [usize; 2] {
+    fn as_usize_array(&self) -> [usize; 2] {
         let p = self.as_uvec2();
         [p.x as usize, p.y as usize]
     }
@@ -231,6 +231,6 @@ mod tests {
         let b = [20, 20];
 
         let dist = GridPoint::taxi_dist(a, b);
-        println!("{}", dist);
+        assert_eq!(dist, 20);
     }
 }
