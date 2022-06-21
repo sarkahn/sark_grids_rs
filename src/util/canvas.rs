@@ -1,4 +1,4 @@
-//! Simple utility for drawing static images to the terminal. Used in examples.
+//! Simple utility for drawing static images to the terminal.
 
 use glam::UVec2;
 

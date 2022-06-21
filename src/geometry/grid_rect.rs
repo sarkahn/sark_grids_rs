@@ -1,9 +1,11 @@
+//! Utility for drawing rectangles on a 2d grid.
 use glam::{IVec2, UVec2};
 
 use crate::{GridPoint, Size2d};
 
 use super::GridShape;
 
+/// A filled rectangle.
 pub struct GridRect {
     pub position: IVec2,
     pub size: UVec2,
@@ -15,10 +17,6 @@ impl GridRect {
             position: pos.as_ivec2(),
             size: size.as_uvec2(),
         }
-    }
-
-    pub fn iter(&self) -> GridRectIter {
-        GridRectIter::new(self)
     }
 
     pub fn move_center(&mut self, position: impl GridPoint) {
@@ -78,6 +76,8 @@ impl Iterator for GridRectIter {
 
 #[cfg(test)]
 mod tests {
+    use crate::geometry::GridShape;
+
     use super::GridRect;
 
     #[test]

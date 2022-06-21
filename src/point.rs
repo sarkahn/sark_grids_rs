@@ -4,7 +4,7 @@ use glam::{IVec2, UVec2, Vec2};
 
 use crate::{pivot::PivotedPoint, Pivot};
 
-/// A trait for an integer point on a 2d grid.
+/// A trait for types representing an integer point on a 2d grid.
 pub trait GridPoint: Clone + Copy {
     fn x(&self) -> i32;
     fn y(&self) -> i32;
@@ -81,7 +81,7 @@ pub trait GridPoint: Clone + Copy {
         IVec2::new(self.x() - amount, self.y())
     }
 
-    /// Retrieve the point aligned on the grid.
+    /// Retrieve the pivot-aligned point on the grid.
     ///
     /// If no pivot has been applied this will simply return the point
     /// directly.
@@ -120,8 +120,8 @@ impl_grid_point!([u32; 2]);
 impl_grid_point!([i32; 2]);
 impl_grid_point!([usize; 2]);
 
+/// A trait for types representing a 2d size.
 #[allow(clippy::len_without_is_empty)]
-/// A trait for mixing of the different types representing a 2d size.
 pub trait Size2d: Clone + Copy {
     fn width(&self) -> usize;
     fn height(&self) -> usize;
@@ -176,7 +176,7 @@ impl_size2d!([u32; 2]);
 impl_size2d!([i32; 2]);
 impl_size2d!([usize; 2]);
 
-/// A trait for an arbitrary 2d point.
+/// A trait for types representing arbitrary 2d point.
 pub trait Point2d {
     fn x(&self) -> f32;
     fn y(&self) -> f32;

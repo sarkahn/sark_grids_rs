@@ -43,7 +43,7 @@ impl From<Dir4> for IVec2 {
 impl Dir4 {
     /// Retrieve the direction from the given point, or none if it's [0,0].
     pub fn from_point(p: impl GridPoint) -> Option<Dir4> {
-        match p.as_array() {
+        match p.as_ivec2().signum().to_array() {
             [0, 1] => Some(Dir4::Up),
             [0, -1] => Some(Dir4::Down),
             [-1, 0] => Some(Dir4::Left),
@@ -90,7 +90,7 @@ pub enum Dir8 {
 impl Dir8 {
     /// Retrieve the direction from the given point, or none if it's [0,0].
     pub fn from_point(p: impl GridPoint) -> Option<Dir8> {
-        match p.as_array() {
+        match p.as_ivec2().signum().to_array() {
             [0, 1] => Some(Dir8::Up),
             [0, -1] => Some(Dir8::Down),
             [-1, 0] => Some(Dir8::Left),
@@ -145,16 +145,5 @@ impl From<Dir8> for IVec2 {
             Dir8::DownLeft => DOWN_LEFT,
             Dir8::DownRight => DOWN_RIGHT,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use glam::IVec2;
-
-    #[test]
-    fn signum() {
-        let p = IVec2::X;
-        println!("{}", p.signum());
     }
 }

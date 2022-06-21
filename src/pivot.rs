@@ -3,7 +3,7 @@ use glam::{IVec2, Vec2};
 use crate::{GridPoint, Size2d};
 
 /// A pivot point on a 2d rect.
-#[derive(Eq, PartialEq, Clone, Copy)]
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub enum Pivot {
     /// +X Right, +Y Down.
     TopLeft,

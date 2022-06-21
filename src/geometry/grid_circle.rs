@@ -1,3 +1,4 @@
+//! Utility for drawing circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
 use std::iter::Flatten;
 
@@ -7,6 +8,7 @@ use crate::GridPoint;
 
 use super::{grid_rect::GridRectIter, GridRect, GridShape};
 
+/// A hollow circle.
 pub struct GridCircleOutline {
     center: IVec2,
     radius: usize,
@@ -29,6 +31,7 @@ impl GridShape for GridCircleOutline {
     }
 }
 
+/// A filled circle.
 pub struct GridCircleFilled {
     center: IVec2,
     radius: usize,

@@ -23,11 +23,7 @@
 //! assert_eq!("hello", hello);
 //! ```
 
-use std::{
-    iter::StepBy,
-    ops::{Bound, Index, IndexMut, RangeBounds},
-    slice::{Iter, IterMut},
-};
+use std::ops::{Bound, Index, IndexMut, RangeBounds};
 
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
@@ -66,13 +62,13 @@ impl<T: Clone> Grid<T> {
 
     /// An iterator over all elements in the grid.
     #[inline]
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.data.iter()
     }
 
     /// A mutable iterator over all elements in the grid.
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<T> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
         self.data.iter_mut()
     }
 
@@ -80,7 +76,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from left to right.
     #[inline]
-    pub fn row_iter(&self, y: usize) -> Iter<T> {
+    pub fn row_iter(&self, y: usize) -> impl Iterator<Item = &T> {
         let w = self.width() as usize;
         let i = y * w;
         self.data[i..i + w].iter()
@@ -136,7 +132,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from bottom to top.
     #[inline]
-    pub fn column_iter(&self, x: usize) -> StepBy<Iter<T>> {
+    pub fn column_iter(&self, x: usize) -> impl Iterator<Item = &T> {
         let w = self.width() as usize;
         return self.data[x..].iter().step_by(w);
     }
@@ -145,7 +141,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from bottom to top.
     #[inline]
-    pub fn column_iter_mut(&mut self, x: usize) -> StepBy<IterMut<T>> {
+    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item = &mut T> {
         let w = self.width() as usize;
         return self.data[x..].iter_mut().step_by(w);
     }
@@ -193,7 +189,8 @@ impl<T: Clone> Grid<T> {
     }
 
     #[inline]
-    pub fn in_bounds(&self, pos: IVec2) -> bool {
+    pub fn in_bounds(&self, pos: impl GridPoint) -> bool {
+        let pos = pos.as_ivec2();
         pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
     }
 
@@ -240,11 +237,13 @@ impl<T: Clone> Grid<T> {
             .zip(self.data.iter_mut())
     }
 
+    /// Retrieve a linear slice of the underlying grid data.
     pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {
         let (min, max) = ranges_to_min_max_usize(slice, self.len());
         &self.data[min..max]
     }
 
+    /// Retrieve a mutable linear slice of the underlying grid data.
     pub fn slice_mut<R: RangeBounds<usize>>(&mut self, slice: R) -> &mut [T] {
         let (min, max) = ranges_to_min_max_usize(slice, self.len());
         &mut self.data[min..max]
@@ -388,6 +387,7 @@ where
     }
 }
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum Side {
     Left,
     Top,
@@ -446,7 +446,7 @@ mod tests {
 
         assert_eq!("hello", hello);
 
-        assert_eq!(grid.row_iter(6).len(), 10);
+        assert_eq!(grid.row_iter(6).count(), 10);
     }
 
     #[test]
@@ -463,7 +463,7 @@ mod tests {
 
         assert_eq!("hello", hello);
 
-        assert_eq!(grid.column_iter(2).len(), 15);
+        assert_eq!(grid.column_iter(2).count(), 15);
     }
 
     #[test]

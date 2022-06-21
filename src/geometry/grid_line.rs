@@ -1,3 +1,4 @@
+//! Utility for drawing lines on a 2d grid.
 // https://www.redblobgames.com/grids/line-drawing.html
 use glam::{BVec2, IVec2, Vec2};
 
@@ -84,6 +85,7 @@ fn diag_distance(p1: IVec2, p2: IVec2) -> i32 {
     i32::max(d.x.abs(), d.y.abs())
 }
 
+/// An grid line with only orthogonal movement.
 pub struct GridLineOrthogonal {
     start: IVec2,
     end: IVec2,
