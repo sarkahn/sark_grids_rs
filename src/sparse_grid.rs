@@ -7,7 +7,7 @@
 //!
 //! # Example
 //!
-//! ```
+//! ```rust
 //! use sark_grids::sparse_grid::SparseGrid;
 //!
 //! let mut grid = SparseGrid::new([10,10]);
