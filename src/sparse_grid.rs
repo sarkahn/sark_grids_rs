@@ -185,7 +185,7 @@ impl<T: Clone> SparseGrid<T> {
         self.size.y as usize
     }
 
-    pub fn size(&self) -> impl GridPoint {
+    pub fn size(&self) -> UVec2 {
         self.size
     }
 
@@ -201,7 +201,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Converts a 2d grid position to it's corresponding 1D index.
     #[inline(always)]
     pub fn pos_to_index(&self, pos: impl GridPoint) -> usize {
-        let [x, y] = pos.to_array();
+        let [x, y] = pos.as_array();
         (y * self.width() as i32 + x) as usize
     }
 
@@ -336,7 +336,7 @@ mod test {
     fn index() {
         let mut grid = SparseGrid::new([10, 17]);
 
-        let [x, y] = grid.index_to_pos(5).to_array();
+        let [x, y] = grid.index_to_pos(5).as_array();
 
         grid[[5, 6]] = 10;
 

@@ -18,13 +18,19 @@ pub trait GridPoint: Clone + Copy {
     fn as_vec2(&self) -> Vec2 {
         self.as_ivec2().as_vec2()
     }
-    fn to_array(&self) -> [i32; 2] {
+    fn as_array(&self) -> [i32; 2] {
         self.as_ivec2().to_array()
     }
     #[inline]
-    fn to_usize_array(&self) -> [usize;2] {
+    fn as_usize_array(&self) -> [usize; 2] {
         let p = self.as_uvec2();
         [p.x as usize, p.y as usize]
+    }
+
+    /// Get the grid point's corresponding 1d index.
+    #[inline]
+    fn as_index(&self, grid_width: usize) -> usize {
+        self.y() as usize * grid_width + self.x() as usize
     }
 
     /// Return a [PivotedPoint].
@@ -144,7 +150,7 @@ pub trait Size2d: Clone + Copy {
         [self.width(), self.height()]
     }
     #[inline]
-    fn to_usize_array(&self) -> [usize;2] {
+    fn to_usize_array(&self) -> [usize; 2] {
         let p = self.as_uvec2();
         [p.x as usize, p.y as usize]
     }
@@ -187,7 +193,7 @@ pub trait Point2d {
     fn to_array(&self) -> [f32; 2] {
         self.as_vec2().to_array()
     }
-    fn to_usize_array(&self) -> [usize;2] {
+    fn to_usize_array(&self) -> [usize; 2] {
         let p = self.as_uvec2();
         [p.x as usize, p.y as usize]
     }

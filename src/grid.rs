@@ -24,7 +24,7 @@
 //! ```
 
 use std::{
-    iter::{StepBy},
+    iter::StepBy,
     ops::{Bound, Index, IndexMut, RangeBounds},
     slice::{Iter, IterMut},
 };
@@ -107,7 +107,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Will insert up to the length of a row.
     pub fn insert_row_at(&mut self, xy: impl GridPoint, row: impl Iterator<Item = T>) {
-        let [x, y] = xy.to_array();
+        let [x, y] = xy.as_array();
         let iter = self.row_iter_mut(y as usize).skip(x as usize);
         for (v, input) in iter.zip(row) {
             *v = input;
@@ -125,7 +125,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Will insert up to the height of a column.
     pub fn insert_column_at(&mut self, xy: impl GridPoint, column: impl IntoIterator<Item = T>) {
-        let [x, y] = xy.to_array();
+        let [x, y] = xy.as_array();
         let iter = self.column_iter_mut(x as usize).skip(y as usize);
         for (v, input) in iter.zip(column) {
             *v = input;
@@ -171,7 +171,7 @@ impl<T: Clone> Grid<T> {
     /// Converts a 2d grid position to it's corresponding 1D index.
     #[inline(always)]
     pub fn pos_to_index(&self, pos: impl GridPoint) -> usize {
-        let [x, y] = pos.to_array();
+        let [x, y] = pos.as_array();
         y as usize * self.width() + x as usize
     }
 
@@ -238,18 +238,6 @@ impl<T: Clone> Grid<T> {
             .cartesian_product(0..self.width())
             .map(|(y, x)| IVec2::new(x as i32, y as i32))
             .zip(self.data.iter_mut())
-    }
-
-    /// Creates a [crate::world_grid::WorldGrid] from this grid with the given pivot. This can be used to translate
-    /// between grid points and world space.
-    pub fn to_world_pivot(&self, pivot: Pivot) -> crate::world_grid::WorldGrid {
-        crate::world_grid::WorldGrid::new(self.size, pivot)
-    }
-
-    /// Creates a [crate::world_grid::WorldGrid] from this grid with the default bottom left pivot. This can be used to translate
-    /// between grid points and world space.
-    pub fn to_world(&self) -> crate::world_grid::WorldGrid {
-        self.to_world_pivot(Pivot::BottomLeft)
     }
 
     pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {
