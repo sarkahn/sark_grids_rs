@@ -146,10 +146,15 @@ impl WorldGrid {
 pub enum WorldSpace {
     /// World space is defined by world units. `pixels_per_tile` determines
     /// how many pixels fit vertically in a single world unit.
+    /// 
+    /// With this setting the size of all tiles is exactly one world unit.
     Units,
     /// World space is defined in pixels. All position->index conversions
     /// will be scaled by `pixels_per_unit`.
     ///
+    /// With this setting the size of all tiles in world units is equal to 
+    /// the `pixels_per_tile` of the [`WorldGrid`].
+    /// 
     /// This matches the defaults for bevy's built in orthographic camera.
     Pixels,
 }
