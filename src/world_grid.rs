@@ -5,30 +5,31 @@ use crate::{point::Point2d, GridPoint, Pivot, Size2d};
 
 /// A sized grid which can be used to translate world positions to
 /// tile positions based on [`WorldSpace`] and the size of the grid.
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct WorldGrid {
     /// The [`WorldSpace`] for this grid.
     pub world_space: WorldSpace,
     /// How many pixels constitute a "tile" in the grid.
-    pub pixels_per_tile: u32,
+    pub pixels_per_tile: UVec2,
     /// How many tiles the grid has.
     pub tile_count: UVec2,
 }
 
 impl WorldGrid {
     /// Create a [`WorldGrid`] set to [`WorldSpace::Units`].
-    pub fn unit_grid(tile_count: impl Size2d, pixels_per_tile: u32) -> Self {
+    pub fn unit_grid(tile_count: impl Size2d, pixels_per_tile: impl Size2d) -> Self {
         Self {
             world_space: WorldSpace::Units,
-            pixels_per_tile,
+            pixels_per_tile: pixels_per_tile.as_uvec2(),
             tile_count: tile_count.as_uvec2(),
         }
     }
 
     /// Create a [`WorldGrid`] set to [`WorldSpace::Pixels`].
-    pub fn pixel_grid(tile_count: impl Size2d, pixels_per_tile: u32) -> Self {
+    pub fn pixel_grid(tile_count: impl Size2d, pixels_per_tile: impl Size2d) -> Self {
         Self {
             world_space: WorldSpace::Pixels,
-            pixels_per_tile,
+            pixels_per_tile: pixels_per_tile.as_uvec2(),
             tile_count: tile_count.as_uvec2(),
         }
     }
@@ -61,16 +62,21 @@ impl WorldGrid {
         match self.world_space {
             WorldSpace::Units => pos.as_vec2() - self.center_offset(),
             WorldSpace::Pixels => {
-                let offset = self.center_offset() * self.pixels_per_tile as f32;
-                let pos = pos.as_vec2() * self.pixels_per_tile as f32;
+                let offset = self.center_offset() * self.pixels_per_tile.as_vec2();
+                let pos = pos.as_vec2() * self.pixels_per_tile.as_vec2();
                 pos - offset
             }
         }
     }
 
     /// How large the grid is in world space, given the [`WorldSpace`] of the grid.
-    pub fn world_size(&self) -> UVec2 {
-        self.tile_count * self.world_space_scale() as u32
+    pub fn world_size(&self) -> Vec2 {
+        self.tile_count.as_vec2() * self.world_space_scale()
+    }
+
+    /// Convert a position to it's tile position in the grid.
+    pub fn pos_to_tile_pos(&self, pos: impl Point2d) -> Vec2 {
+        pos.as_vec2() + self.center_offset()
     }
 
     /// Return the world center of the tile at the given index.
@@ -113,11 +119,15 @@ impl WorldGrid {
 
     /// An iterator over the center of every tile in the grid.
     pub fn tile_center_iter(&self) -> impl Iterator<Item = Vec2> {
-        let pivot_offset = -self.tile_count.as_vec2() / 2.0 + self.center_offset();
+        //let pivot_offset = -self.tile_count.as_vec2() / 2.0 + (0.5 - self.center_offset());
+        let start = self.pivot_pos(Pivot::BottomLeft) + 0.5;
         let world_space_scale = self.world_space_scale();
         (0..self.tile_count.x)
             .cartesian_product(0..self.tile_count.y)
-            .map(move |(x, y)| world_space_scale * (Vec2::new(x as f32, y as f32) + pivot_offset))
+            .map(move |(x, y)| {
+                let xy = Vec2::new(x as f32,y as f32);
+                (start + xy) * world_space_scale
+            })
     }
 
     /// The center of a world grid always sits on origin, so odd sized
@@ -131,32 +141,45 @@ impl WorldGrid {
     /// Returns a value that can be used to convert indices to positions
     /// according to [`WorldSpace`].
     #[inline]
-    fn world_space_scale(&self) -> f32 {
+    pub fn world_space_scale(&self) -> Vec2 {
         match self.world_space {
-            WorldSpace::Units => 1.0,
-            WorldSpace::Pixels => self.pixels_per_tile as f32,
+            WorldSpace::Units => Vec2::new(
+                self.pixels_per_tile.x as f32 / self.pixels_per_tile.y as f32,
+                1.0
+            ),
+            WorldSpace::Pixels => self.pixels_per_tile.as_vec2(),
         }
     }
 }
 
 /// How world space is defined.
 ///
-/// This is used by [`WorldGrid`] when converting between points and
-/// tile indices.
+/// This is used when converting between positions and tile indices.
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum WorldSpace {
-    /// World space is defined by world units. `pixels_per_tile` determines
-    /// how many pixels fit vertically in a single world unit.
-    ///
     /// With this setting the size of all tiles is exactly one world unit.
+    /// 
+    /// When world space is defined by world units, `pixels_per_tile` determines
+    /// how many pixels fit vertically in a single world unit.
     Units,
-    /// World space is defined in pixels. All position->index conversions
-    /// will be scaled by `pixels_per_unit`.
-    ///
     /// With this setting the size of all tiles in world units is equal to
-    /// the `pixels_per_tile` of the [`WorldGrid`].
+    /// `pixels_per_tile`.
     ///
-    /// This matches the defaults for bevy's built in orthographic camera.
+    /// This matches the defaults for bevy's built in orthographic camera
+    /// where one world unit == one pixel.
+    /// 
+    /// All position->index conversions will be scaled by `pixels_per_unit`.
     Pixels,
+}
+
+impl WorldSpace {
+    /// Return the opposite of this [`WorldSpace`].
+    pub fn other(&self) -> Self {
+        match self {
+            WorldSpace::Units => WorldSpace::Pixels,
+            WorldSpace::Pixels => WorldSpace::Units,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -214,5 +237,16 @@ mod tests {
         let tr = grid.pivot_pos(Pivot::TopRight).to_array();
         assert_eq!([-16.0, -16.0], bl);
         assert_eq!([16.0, 16.0], tr);
+    }
+
+    #[test]
+    fn pos_to_tile_pos() {
+        let grid = WorldGrid::unit_grid([5,5], 8);
+        let p = grid.pos_to_tile_pos([0.0,0.0]);
+        assert_eq!([0.5,0.5], p.to_array());
+        
+        let grid = WorldGrid::unit_grid([4,4], 8);
+        let p = grid.pos_to_tile_pos([0.0,0.0]);
+        assert_eq!([0.0,0.0], p.to_array());
     }
 }

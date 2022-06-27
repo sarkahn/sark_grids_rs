@@ -12,19 +12,16 @@ pub trait GridPoint: Clone + Copy {
     fn as_ivec2(&self) -> IVec2 {
         IVec2::new(self.x(), self.y())
     }
+    
     fn as_uvec2(&self) -> UVec2 {
         self.as_ivec2().as_uvec2()
     }
     fn as_vec2(&self) -> Vec2 {
         self.as_ivec2().as_vec2()
     }
+
     fn as_array(&self) -> [i32; 2] {
         self.as_ivec2().to_array()
-    }
-    #[inline]
-    fn as_usize_array(&self) -> [usize; 2] {
-        let p = self.as_uvec2();
-        [p.x as usize, p.y as usize]
     }
 
     /// Get the grid point's corresponding 1d index.
@@ -85,7 +82,10 @@ pub trait GridPoint: Clone + Copy {
     ///
     /// If no pivot has been applied this will simply return the point
     /// directly.
-    fn aligned(&self, size: impl Size2d) -> IVec2;
+    fn get_aligned_point(&self, size: impl Size2d) -> IVec2;
+
+    /// Retrieve the [`PivotedPoint`] with applied pivots, if any.
+    fn get_pivot(self) -> PivotedPoint;
 
     #[inline]
     /// The [taxicab distance](https://en.wikipedia.org/wiki/Taxicab_geometry) between two grid points.
@@ -106,9 +106,17 @@ macro_rules! impl_grid_point {
                 self[1] as i32
             }
 
-            /// Returns the point directly - no pivot has been applied.
-            fn aligned(&self, _size: impl Size2d) -> IVec2 {
+            // Returns the point directly - no pivot has been applied.
+            fn get_aligned_point(&self, _size: impl Size2d) -> IVec2 {
                 IVec2::new(self[0] as i32, self[1] as i32)
+            }
+
+            
+            fn get_pivot(self) -> PivotedPoint {
+                PivotedPoint {
+                    pivot: Pivot::BottomLeft,
+                    point: IVec2::new(self[0] as i32, self[1] as i32)
+                }
             }
         }
     };

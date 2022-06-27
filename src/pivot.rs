@@ -33,11 +33,12 @@ impl Pivot {
     /// Transform a point to it's equivalent from the perspective of
     /// this pivot.
     pub fn pivot_aligned_point(&self, point: impl GridPoint, size: impl Size2d) -> IVec2 {
-        let point = point.as_ivec2();
-        let align_offset = size.as_ivec2().as_vec2() - Vec2::ONE;
-        let align_offset = (align_offset * Vec2::from(*self)).as_ivec2();
+        let axis = Vec2::from(*self);
+        let align = (size.as_vec2() - Vec2::ONE) * axis;
+        //let align_offset = size.as_vec2() - Vec2::ONE;
+        //let align_offset = (align_offset * Vec2::from(*self)).as_ivec2();
 
-        point * self.axis() + align_offset
+        point.as_ivec2() * self.axis() + align.as_ivec2()//align_offset
     }
 }
 
@@ -54,7 +55,7 @@ impl From<Pivot> for Vec2 {
 }
 
 /// A 2d point on a rect aligned to a certain [Pivot].
-#[derive(Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct PivotedPoint {
     pub point: IVec2,
     pub pivot: Pivot,
@@ -64,6 +65,10 @@ impl PivotedPoint {
     /// Returns the point from the perspective of the pivot.
     pub fn pivot_point(&self) -> IVec2 {
         self.point
+    }
+
+    pub fn pivot(&self) -> Pivot {
+        self.pivot
     }
 }
 
@@ -80,8 +85,12 @@ impl GridPoint for PivotedPoint {
 
     /// Retrieve the pivot aligned point.
     #[inline]
-    fn aligned(&self, size: impl Size2d) -> IVec2 {
+    fn get_aligned_point(&self, size: impl Size2d) -> IVec2 {
         self.pivot.pivot_aligned_point(self.point, size)
+    }
+
+    fn get_pivot(self) -> PivotedPoint {
+        self
     }
 }
 
@@ -92,9 +101,9 @@ mod tests {
     #[test]
     fn pivot_point() {
         let p = [0, 0].pivot(Pivot::TopRight);
-        assert_eq!([9, 9], p.aligned([10, 10]).to_array());
+        assert_eq!([9, 9], p.get_aligned_point([10, 10]).to_array());
 
         let p = [3, 3].pivot(Pivot::TopLeft);
-        assert_eq!([3, 6], p.aligned([10, 10]).to_array());
+        assert_eq!([3, 6], p.get_aligned_point([10, 10]).to_array());
     }
 }

@@ -207,9 +207,9 @@ impl<T: Clone> Grid<T> {
     /// An iterator over a rectangular portion of the grid defined by the given range.
     ///
     /// Yields `(IVec2, &T)`, where `IVec2` is the corresponding position of the value in the grid.
-    pub fn rect_iter<RANGE: RangeBounds<[i32; 2]>>(
+    pub fn rect_iter(
         &self,
-        range: RANGE,
+        range: impl RangeBounds<[i32;2]>,
     ) -> impl Iterator<Item = (IVec2, &T)> {
         let (min, max) = ranges_to_min_max(range, self.size().as_ivec2());
         (min.y..=max.y)
@@ -238,13 +238,13 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Retrieve a linear slice of the underlying grid data.
-    pub fn slice<R: RangeBounds<usize>>(&self, slice: R) -> &[T] {
+    pub fn slice(&self, slice: impl RangeBounds<usize>) -> &[T] {
         let (min, max) = ranges_to_min_max_usize(slice, self.len());
         &self.data[min..max]
     }
 
     /// Retrieve a mutable linear slice of the underlying grid data.
-    pub fn slice_mut<R: RangeBounds<usize>>(&mut self, slice: R) -> &mut [T] {
+    pub fn slice_mut(&mut self, slice: impl RangeBounds<usize>) -> &mut [T] {
         let (min, max) = ranges_to_min_max_usize(slice, self.len());
         &mut self.data[min..max]
     }
@@ -313,7 +313,7 @@ impl<T: Clone> Grid<T> {
     }
 }
 
-fn ranges_to_min_max_usize<RANGE: RangeBounds<usize>>(range: RANGE, max: usize) -> (usize, usize) {
+fn ranges_to_min_max_usize(range: impl RangeBounds<usize>, max: usize) -> (usize, usize) {
     let range_min = match range.start_bound() {
         std::ops::Bound::Included(v) => *v,
         std::ops::Bound::Excluded(v) => *v,
@@ -332,7 +332,7 @@ fn ranges_to_min_max_usize<RANGE: RangeBounds<usize>>(range: RANGE, max: usize) 
     (range_min, range_max)
 }
 
-fn ranges_to_min_max<RANGE: RangeBounds<[i32; 2]>>(range: RANGE, max: IVec2) -> (IVec2, IVec2) {
+fn ranges_to_min_max(range: impl RangeBounds<[i32;2]>, max: IVec2) -> (IVec2, IVec2) {
     let min = match range.start_bound() {
         std::ops::Bound::Included([x, y]) => IVec2::new(*x, *y),
         std::ops::Bound::Excluded([x, y]) => IVec2::new(*x, *y),
