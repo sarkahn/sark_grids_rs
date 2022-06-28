@@ -179,8 +179,6 @@ pub enum WorldSpace {
     ///
     /// This matches the defaults for bevy's built in orthographic camera
     /// where one world unit == one pixel.
-    ///
-    /// All position->index conversions will be scaled by `pixels_per_unit`.
     Pixels,
 }
 
