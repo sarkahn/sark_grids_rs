@@ -12,7 +12,7 @@ pub trait GridPoint: Clone + Copy {
     fn as_ivec2(&self) -> IVec2 {
         IVec2::new(self.x(), self.y())
     }
-    
+
     fn as_uvec2(&self) -> UVec2 {
         self.as_ivec2().as_uvec2()
     }
@@ -111,11 +111,10 @@ macro_rules! impl_grid_point {
                 IVec2::new(self[0] as i32, self[1] as i32)
             }
 
-            
             fn get_pivot(self) -> PivotedPoint {
                 PivotedPoint {
                     pivot: Pivot::BottomLeft,
-                    point: IVec2::new(self[0] as i32, self[1] as i32)
+                    point: IVec2::new(self[0] as i32, self[1] as i32),
                 }
             }
         }

@@ -36,10 +36,10 @@ impl WorldGrid {
 
     /// The size of a tile in world space, given `pixels_per_tile` and `world_space`.
     pub fn tile_size_world(&self) -> Vec2 {
-        let [x,y] = self.pixels_per_tile.as_vec2().to_array();
+        let [x, y] = self.pixels_per_tile.as_vec2().to_array();
         match self.world_space {
             WorldSpace::Units => Vec2::new(x / y, 1.0),
-            WorldSpace::Pixels => Vec2::new(x,y),
+            WorldSpace::Pixels => Vec2::new(x, y),
         }
     }
 
@@ -126,11 +126,11 @@ impl WorldGrid {
         let start = self.pivot_pos(Pivot::BottomLeft);
         let tile_size = self.tile_size_world();
         (0..self.tile_count.y)
-        .cartesian_product(0..self.tile_count.x)
-        .map(move |(y, x)| {
-            let xy = Vec2::new(x as f32,y as f32);
-            (start + xy) * tile_size
-        })
+            .cartesian_product(0..self.tile_count.x)
+            .map(move |(y, x)| {
+                let xy = Vec2::new(x as f32, y as f32);
+                (start + xy) * tile_size
+            })
     }
 
     /// An iterator over the center of every tile in the grid.
@@ -138,11 +138,11 @@ impl WorldGrid {
         let start = self.pivot_pos(Pivot::BottomLeft) + 0.5;
         let tile_size = self.tile_size_world();
         (0..self.tile_count.y)
-        .cartesian_product(0..self.tile_count.x)
-        .map(move |(y, x)| {
-            let xy = Vec2::new(x as f32,y as f32);
-            (start + xy) * tile_size
-        })
+            .cartesian_product(0..self.tile_count.x)
+            .map(move |(y, x)| {
+                let xy = Vec2::new(x as f32, y as f32);
+                (start + xy) * tile_size
+            })
         ////let pivot_offset = -self.tile_count.as_vec2() / 2.0 + (0.5 - self.center_offset());
         // let start = self.pivot_pos(Pivot::BottomLeft) + (self.tile_size_world() * 0.5);
         // println!("START {}", start);
@@ -170,7 +170,7 @@ impl WorldGrid {
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum WorldSpace {
     /// With this setting the size of all tiles is exactly one world unit.
-    /// 
+    ///
     /// When world space is defined by world units, `pixels_per_tile` determines
     /// how many pixels fit vertically in a single world unit.
     Units,
@@ -179,7 +179,7 @@ pub enum WorldSpace {
     ///
     /// This matches the defaults for bevy's built in orthographic camera
     /// where one world unit == one pixel.
-    /// 
+    ///
     /// All position->index conversions will be scaled by `pixels_per_unit`.
     Pixels,
 }
@@ -202,7 +202,7 @@ mod tests {
 
     #[test]
     fn pixel_iter() {
-        let grid = WorldGrid::pixel_grid([3, 3], [8,8]);
+        let grid = WorldGrid::pixel_grid([3, 3], [8, 8]);
 
         let mut iter = grid.tile_pos_iter();
         assert_eq!([-12.0, -12.0], iter.next().unwrap().to_array());
@@ -215,36 +215,36 @@ mod tests {
 
     #[test]
     fn bounds() {
-        let grid = WorldGrid::unit_grid([3, 3], [8,8]);
+        let grid = WorldGrid::unit_grid([3, 3], [8, 8]);
         assert_eq!(true, grid.pos_in_bounds([-1.5, 0.0]));
         assert_eq!(false, grid.pos_in_bounds([-1.6, 0.0]));
 
-        let grid = WorldGrid::unit_grid([2, 2], [8,8]);
+        let grid = WorldGrid::unit_grid([2, 2], [8, 8]);
         assert_eq!(true, grid.pos_in_bounds([-1.0, 0.0]));
         assert_eq!(false, grid.pos_in_bounds([-1.1, 0.0]));
     }
 
     #[test]
     fn corners() {
-        let grid = WorldGrid::unit_grid([4, 4], [8,8]);
+        let grid = WorldGrid::unit_grid([4, 4], [8, 8]);
         let bl = grid.pivot_pos(Pivot::BottomLeft).to_array();
         let tr = grid.pivot_pos(Pivot::TopRight).to_array();
         assert_eq!([-2.0, -2.0], bl);
         assert_eq!([2.0, 2.0], tr);
 
-        let grid = WorldGrid::unit_grid([3, 3], [8,8]);
+        let grid = WorldGrid::unit_grid([3, 3], [8, 8]);
         let bl = grid.pivot_pos(Pivot::BottomLeft).to_array();
         let tr = grid.pivot_pos(Pivot::TopRight).to_array();
         assert_eq!([-1.5, -1.5], bl);
         assert_eq!([1.5, 1.5], tr);
 
-        let grid = WorldGrid::pixel_grid([3, 3], [8,8]);
+        let grid = WorldGrid::pixel_grid([3, 3], [8, 8]);
         let bl = grid.pivot_pos_world(Pivot::BottomLeft).to_array();
         let tr = grid.pivot_pos_world(Pivot::TopRight).to_array();
         assert_eq!([-12.0, -12.0], bl);
         assert_eq!([12.0, 12.0], tr);
 
-        let grid = WorldGrid::pixel_grid([4, 4], [8,8]);
+        let grid = WorldGrid::pixel_grid([4, 4], [8, 8]);
         let bl = grid.pivot_pos_world(Pivot::BottomLeft).to_array();
         let tr = grid.pivot_pos_world(Pivot::TopRight).to_array();
         assert_eq!([-16.0, -16.0], bl);
@@ -253,53 +253,53 @@ mod tests {
 
     #[test]
     fn pos_to_tile_pos() {
-        let grid = WorldGrid::unit_grid([5,5], [8,8]);
-        let p = grid.pos_to_tile_pos([0.0,0.0]);
-        assert_eq!([0.5,0.5], p.to_array());
-        
-        let grid = WorldGrid::unit_grid([4,4], [8,8]);
-        let p = grid.pos_to_tile_pos([0.0,0.0]);
-        assert_eq!([0.0,0.0], p.to_array());
+        let grid = WorldGrid::unit_grid([5, 5], [8, 8]);
+        let p = grid.pos_to_tile_pos([0.0, 0.0]);
+        assert_eq!([0.5, 0.5], p.to_array());
+
+        let grid = WorldGrid::unit_grid([4, 4], [8, 8]);
+        let p = grid.pos_to_tile_pos([0.0, 0.0]);
+        assert_eq!([0.0, 0.0], p.to_array());
     }
 
     #[test]
     fn world_iter_center_odd() {
-        let grid = WorldGrid::unit_grid([3,3], [8,8]);
+        let grid = WorldGrid::unit_grid([3, 3], [8, 8]);
 
-        let points: Vec<_> = grid.tile_center_iter().map(|p|p.to_array()).collect();
+        let points: Vec<_> = grid.tile_center_iter().map(|p| p.to_array()).collect();
 
-        assert_eq!([-1.0,-1.0], points[0]);
-        assert_eq!([ 0.0,-1.0], points[1]);
-        assert_eq!([ 1.0,-1.0], points[2]);
+        assert_eq!([-1.0, -1.0], points[0]);
+        assert_eq!([0.0, -1.0], points[1]);
+        assert_eq!([1.0, -1.0], points[2]);
         assert_eq!([-1.0, 0.0], points[3]);
-        assert_eq!([ 0.0, 0.0], points[4]);
-        assert_eq!([ 1.0, 0.0], points[5]);
+        assert_eq!([0.0, 0.0], points[4]);
+        assert_eq!([1.0, 0.0], points[5]);
         assert_eq!([-1.0, 1.0], points[6]);
-        assert_eq!([ 0.0, 1.0], points[7]);
-        assert_eq!([ 1.0, 1.0], points[8]);
+        assert_eq!([0.0, 1.0], points[7]);
+        assert_eq!([1.0, 1.0], points[8]);
     }
-    
+
     #[test]
     fn world_iter_center_even() {
-        let grid = WorldGrid::unit_grid([2,2], [8,8]);
+        let grid = WorldGrid::unit_grid([2, 2], [8, 8]);
 
-        let points: Vec<_> = grid.tile_center_iter().map(|p|p.to_array()).collect();
+        let points: Vec<_> = grid.tile_center_iter().map(|p| p.to_array()).collect();
 
-        assert_eq!([-0.5,-0.5], points[0]);
-        assert_eq!([ 0.5,-0.5], points[1]);
+        assert_eq!([-0.5, -0.5], points[0]);
+        assert_eq!([0.5, -0.5], points[1]);
         assert_eq!([-0.5, 0.5], points[2]);
-        assert_eq!([ 0.5, 0.5], points[3]);
+        assert_eq!([0.5, 0.5], points[3]);
     }
 
     #[test]
     fn rect_tiles() {
-        let grid = WorldGrid::unit_grid([2,2], [4,8]);
+        let grid = WorldGrid::unit_grid([2, 2], [4, 8]);
 
-        let points: Vec<_> = grid.tile_center_iter().map(|p|p.to_array()).collect();
+        let points: Vec<_> = grid.tile_center_iter().map(|p| p.to_array()).collect();
 
-        assert_eq!([-0.25,-0.5], points[0]);
-        assert_eq!([ 0.25,-0.5], points[1]);
+        assert_eq!([-0.25, -0.5], points[0]);
+        assert_eq!([0.25, -0.5], points[1]);
         assert_eq!([-0.25, 0.5], points[2]);
-        assert_eq!([ 0.25, 0.5], points[3]);
+        assert_eq!([0.25, 0.5], points[3]);
     }
 }

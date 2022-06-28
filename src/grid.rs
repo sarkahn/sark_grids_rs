@@ -209,7 +209,7 @@ impl<T: Clone> Grid<T> {
     /// Yields `(IVec2, &T)`, where `IVec2` is the corresponding position of the value in the grid.
     pub fn rect_iter(
         &self,
-        range: impl RangeBounds<[i32;2]>,
+        range: impl RangeBounds<[i32; 2]>,
     ) -> impl Iterator<Item = (IVec2, &T)> {
         let (min, max) = ranges_to_min_max(range, self.size().as_ivec2());
         (min.y..=max.y)
@@ -332,7 +332,7 @@ fn ranges_to_min_max_usize(range: impl RangeBounds<usize>, max: usize) -> (usize
     (range_min, range_max)
 }
 
-fn ranges_to_min_max(range: impl RangeBounds<[i32;2]>, max: IVec2) -> (IVec2, IVec2) {
+fn ranges_to_min_max(range: impl RangeBounds<[i32; 2]>, max: IVec2) -> (IVec2, IVec2) {
     let min = match range.start_bound() {
         std::ops::Bound::Included([x, y]) => IVec2::new(*x, *y),
         std::ops::Bound::Excluded([x, y]) => IVec2::new(*x, *y),

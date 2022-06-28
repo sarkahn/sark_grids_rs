@@ -38,7 +38,7 @@ impl Pivot {
         //let align_offset = size.as_vec2() - Vec2::ONE;
         //let align_offset = (align_offset * Vec2::from(*self)).as_ivec2();
 
-        point.as_ivec2() * self.axis() + align.as_ivec2()//align_offset
+        point.as_ivec2() * self.axis() + align.as_ivec2() //align_offset
     }
 }
 
