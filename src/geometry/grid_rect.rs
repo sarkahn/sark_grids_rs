@@ -30,6 +30,10 @@ impl GridRect {
     pub fn max(&self) -> IVec2 {
         self.position + self.size.as_ivec2()
     }
+
+    pub fn center(&self) -> IVec2 {
+        self.position + self.size.as_ivec2() / 2
+    }
 }
 
 impl GridShape for GridRect {
@@ -74,17 +78,39 @@ impl Iterator for GridRectIter {
     }
 }
 
+pub struct GridBorderIter {
+    curr: IVec2,
+    count: i32,
+    max: i32,
+}
+
+impl Iterator for GridBorderIter {
+    type Item=IVec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.count == self.max {
+            return None;
+        };
+        let curr = self.curr;
+        self.count += 1;
+
+        Some(curr)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::geometry::GridShape;
+    use crate::{geometry::GridShape, util::Canvas};
 
     use super::GridRect;
 
     #[test]
     fn iter() {
-        let rect = GridRect::new([0, 0], [3, 3]);
+        let rect = GridRect::new([1, 1], [3, 3]);
+        let mut canvas = Canvas::new([5, 5]);
         for p in rect.iter() {
-            println!("{}", p);
+            canvas.put(p, '*');
         }
+        canvas.print();
     }
 }

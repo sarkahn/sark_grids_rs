@@ -33,13 +33,14 @@ impl Canvas {
     pub fn print(&self) {
         for y in 0..self.size.y {
             let i = self.to_index([0, y]);
-            let chars = self
+            let string = self
                 .string
                 .chars()
                 .skip(i)
                 .take(self.size.x as usize)
                 .collect::<String>();
-            println!("{}", chars);
+            let string = string.replace(" ", ".");
+            println!("{}", string);
         }
     }
 }

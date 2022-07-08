@@ -171,8 +171,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn iter_orthogonal() {
+    fn line() {
         let line = GridLine::new([9, 4], [0, 0]);
+        let mut canvas = Canvas::new([10, 5]);
+        for p in line.iter() {
+            canvas.put(p, '*');
+        }
+        canvas.print();
+    }
+
+    #[test]
+    fn line_orthogonal() {
+        let line = GridLineOrthogonal::new([9, 4], [0, 0]);
         let mut canvas = Canvas::new([10, 5]);
         for p in line.iter() {
             canvas.put(p, '*');

@@ -87,7 +87,6 @@ impl Iterator for EmptyCircleIterator {
         let d = (self.radius * self.radius - r * r).sqrt().floor();
 
         let c = self.center;
-        let r = r;
         let points = [
             Vec2::new(c.x - d, c.y + r).as_ivec2(),
             Vec2::new(c.x + d, c.y + r).as_ivec2(),

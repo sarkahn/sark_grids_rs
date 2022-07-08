@@ -11,8 +11,40 @@ pub use grid_line::GridLine;
 pub use grid_line::GridLineOrthogonal;
 pub use grid_rect::GridRect;
 
+use self::grid_circle::EmptyCircleIterator;
+use self::grid_circle::FilledCircleIterator;
+use self::grid_line::LineIter;
+use self::grid_line::LineOrthogonalIter;
+use self::grid_rect::GridRectIter;
+
 /// A trait for iterating over the grid points of geometric shapes.
 pub trait GridShape {
     type Iterator: Iterator<Item = IVec2>;
     fn iter(&self) -> Self::Iterator;
+}
+
+struct ShapeIterator {
+    
+}
+
+enum ShapeIter {
+    EmptyCircle(EmptyCircleIterator),
+    FilledCircle(FilledCircleIterator),
+    Rect(GridRectIter),
+    Line(LineIter),
+    LineOrtho(LineOrthogonalIter),
+}
+
+impl Iterator for ShapeIter {
+    type Item=IVec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            ShapeIter::EmptyCircle(i) => todo!(),
+            ShapeIter::FilledCircle(i) => todo!(),
+            ShapeIter::Rect(i) => todo!(),
+            ShapeIter::Line(i) => todo!(),
+            ShapeIter::LineOrtho(i) => todo!(),
+        }
+    }
 }
