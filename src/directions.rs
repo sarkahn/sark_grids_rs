@@ -1,16 +1,16 @@
 //! Utilities for dealing with directions on a 2d grid.
-use glam::{const_ivec2, IVec2};
+use glam::IVec2;
 
 use crate::point::GridPoint;
 
-pub const UP: IVec2 = const_ivec2!([0, 1]);
-pub const DOWN: IVec2 = const_ivec2!([0, -1]);
-pub const LEFT: IVec2 = const_ivec2!([-1, 0]);
-pub const RIGHT: IVec2 = const_ivec2!([1, 0]);
-pub const UP_LEFT: IVec2 = const_ivec2!([-1, 1]);
-pub const UP_RIGHT: IVec2 = const_ivec2!([1, 1]);
-pub const DOWN_LEFT: IVec2 = const_ivec2!([-1, -1]);
-pub const DOWN_RIGHT: IVec2 = const_ivec2!([1, -1]);
+pub const UP: IVec2 = IVec2::from_array([0, 1]);
+pub const DOWN: IVec2 = IVec2::from_array([0, -1]);
+pub const LEFT: IVec2 = IVec2::from_array([-1, 0]);
+pub const RIGHT: IVec2 = IVec2::from_array([1, 0]);
+pub const UP_LEFT: IVec2 = IVec2::from_array([-1, 1]);
+pub const UP_RIGHT: IVec2 = IVec2::from_array([1, 1]);
+pub const DOWN_LEFT: IVec2 = IVec2::from_array([-1, -1]);
+pub const DOWN_RIGHT: IVec2 = IVec2::from_array([1, -1]);
 
 /// Array of the four orthogonal grid directions.
 pub const DIR_4: &[IVec2] = &[UP, DOWN, LEFT, RIGHT];

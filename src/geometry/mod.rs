@@ -32,7 +32,7 @@ pub enum ShapeIter {
 }
 
 impl Iterator for ShapeIter {
-    type Item=IVec2;
+    type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {

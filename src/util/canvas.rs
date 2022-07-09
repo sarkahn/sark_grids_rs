@@ -39,7 +39,7 @@ impl Canvas {
                 .skip(i)
                 .take(self.size.x as usize)
                 .collect::<String>();
-            let string = string.replace(" ", ".");
+            let string = string.replace(' ', ".");
             println!("{}", string);
         }
     }

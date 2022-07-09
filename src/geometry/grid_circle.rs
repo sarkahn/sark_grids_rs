@@ -1,7 +1,5 @@
 //! Utility for drawing circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
-use std::iter::Flatten;
-
 use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
@@ -59,7 +57,7 @@ pub struct EmptyCircleIterator {
     center: Vec2,
     r: usize,
     end: usize,
-    points: [IVec2;8],
+    points: [IVec2; 8],
     curr: usize,
 }
 
@@ -90,7 +88,7 @@ impl Iterator for EmptyCircleIterator {
             self.curr = 0;
             let r = self.r as f32;
             let d = (self.radius * self.radius - r * r).sqrt().floor();
-    
+
             let c = self.center;
             self.points[0] = Vec2::new(c.x - d, c.y + r).as_ivec2();
             self.points[1] = Vec2::new(c.x + d, c.y + r).as_ivec2();
@@ -100,11 +98,11 @@ impl Iterator for EmptyCircleIterator {
             self.points[5] = Vec2::new(c.x + r, c.y + d).as_ivec2();
             self.points[6] = Vec2::new(c.x - r, c.y - d).as_ivec2();
             self.points[7] = Vec2::new(c.x - r, c.y + d).as_ivec2();
-    
+
             self.r += 1;
         }
         let curr = self.points[self.curr];
-        
+
         self.curr += 1;
 
         Some(curr)

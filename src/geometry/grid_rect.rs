@@ -85,7 +85,7 @@ pub struct GridBorderIter {
 }
 
 impl Iterator for GridBorderIter {
-    type Item=IVec2;
+    type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.count == self.max {
