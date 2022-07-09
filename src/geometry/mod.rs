@@ -23,11 +23,11 @@ pub trait GridShape {
     fn iter(&self) -> Self::Iterator;
 }
 
-struct ShapeIterator {
+pub struct ShapeIterator {
     
 }
 
-enum ShapeIter {
+pub enum ShapeIter {
     EmptyCircle(EmptyCircleIterator),
     FilledCircle(FilledCircleIterator),
     Rect(GridRectIter),
@@ -40,11 +40,11 @@ impl Iterator for ShapeIter {
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
-            ShapeIter::EmptyCircle(i) => todo!(),
-            ShapeIter::FilledCircle(i) => todo!(),
-            ShapeIter::Rect(i) => todo!(),
-            ShapeIter::Line(i) => todo!(),
-            ShapeIter::LineOrtho(i) => todo!(),
+            ShapeIter::EmptyCircle(i) => i.next(),
+            ShapeIter::FilledCircle(i) => i.next(),
+            ShapeIter::Rect(i) => i.next(),
+            ShapeIter::Line(i) => i.next(),
+            ShapeIter::LineOrtho(i) => i.next(),
         }
     }
 }

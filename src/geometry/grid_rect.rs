@@ -3,7 +3,7 @@ use glam::{IVec2, UVec2};
 
 use crate::{GridPoint, Size2d};
 
-use super::GridShape;
+use super::{GridShape, ShapeIter};
 
 /// A filled rectangle.
 pub struct GridRect {
@@ -37,10 +37,10 @@ impl GridRect {
 }
 
 impl GridShape for GridRect {
-    type Iterator = GridRectIter;
+    type Iterator = ShapeIter;
 
     fn iter(&self) -> Self::Iterator {
-        GridRectIter::new(self)
+        ShapeIter::Rect(GridRectIter::new(self))
     }
 }
 

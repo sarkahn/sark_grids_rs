@@ -6,7 +6,7 @@ use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
-use super::{grid_rect::GridRectIter, GridRect, GridShape};
+use super::{grid_rect::GridRectIter, GridRect, GridShape, ShapeIter};
 
 /// A hollow circle.
 pub struct GridCircleOutline {
@@ -47,10 +47,10 @@ impl GridCircleFilled {
 }
 
 impl GridShape for GridCircleFilled {
-    type Iterator = FilledCircleIterator;
+    type Iterator = ShapeIter;
 
     fn iter(&self) -> Self::Iterator {
-        FilledCircleIterator::new(self)
+        ShapeIter::FilledCircle(FilledCircleIterator::new(self))
     }
 }
 
@@ -123,7 +123,8 @@ impl FilledCircleIterator {
         let r = circle.radius as f32 + 0.5;
         let bl = IVec2::new((c.x - r).floor() as i32, (c.y - r).floor() as i32);
         let tr = IVec2::new((c.x + r).ceil() as i32, (c.y + r).ceil() as i32);
-        let iter = GridRect::new(bl, tr - bl).iter();
+        let rect = GridRect::new(bl, tr - bl);
+        let iter = GridRectIter::new(&rect);
         FilledCircleIterator {
             iter,
             center: c,
