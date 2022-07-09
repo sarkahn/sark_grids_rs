@@ -4,7 +4,7 @@ use glam::{BVec2, IVec2, Vec2};
 
 use crate::GridPoint;
 
-use super::GridShape;
+use super::{GridShape, ShapeIter};
 
 /// A simple grid line.
 pub struct GridLine {
@@ -22,10 +22,10 @@ impl GridLine {
 }
 
 impl GridShape for GridLine {
-    type Iterator = LineIter;
+    type Iterator = ShapeIter;
 
     fn iter(&self) -> Self::Iterator {
-        LineIter::new(self)
+        ShapeIter::Line(LineIter::new(self))
     }
 }
 
@@ -101,10 +101,10 @@ impl GridLineOrthogonal {
 }
 
 impl GridShape for GridLineOrthogonal {
-    type Iterator = LineOrthogonalIter;
+    type Iterator = ShapeIter;
 
     fn iter(&self) -> Self::Iterator {
-        LineOrthogonalIter::new(self)
+        ShapeIter::LineOrtho(LineOrthogonalIter::new(self))
     }
 }
 

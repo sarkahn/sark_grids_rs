@@ -23,10 +23,6 @@ pub trait GridShape {
     fn iter(&self) -> Self::Iterator;
 }
 
-pub struct ShapeIterator {
-    
-}
-
 pub enum ShapeIter {
     EmptyCircle(EmptyCircleIterator),
     FilledCircle(FilledCircleIterator),
