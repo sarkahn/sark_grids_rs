@@ -83,10 +83,10 @@ impl Iterator for EmptyCircleIterator {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.r > self.end {
-            return None;
-        }
         if self.curr >= 8 {
+            if self.r > self.end {
+                return None;
+            }
             self.curr = 0;
             let r = self.r as f32;
             let d = (self.radius * self.radius - r * r).sqrt().floor();
