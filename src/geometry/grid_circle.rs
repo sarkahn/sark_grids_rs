@@ -1,10 +1,11 @@
 //! Utility for drawing circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
+
 use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
-use super::{grid_rect::GridRectIter, GridRect, GridShape, ShapeIter};
+use super::{grid_rect::GridRectIter, GridShape, ShapeIterator};
 
 /// A hollow circle.
 pub struct GridCircleOutline {
@@ -22,10 +23,8 @@ impl GridCircleOutline {
 }
 
 impl GridShape for GridCircleOutline {
-    type Iterator = EmptyCircleIterator;
-
-    fn iter(&self) -> Self::Iterator {
-        EmptyCircleIterator::new(self)
+    fn iter(&self) -> ShapeIterator {
+        ShapeIterator::EmptyCircle(self.center, EmptyCircleIterator::new(self.radius))
     }
 }
 
@@ -45,10 +44,8 @@ impl GridCircleFilled {
 }
 
 impl GridShape for GridCircleFilled {
-    type Iterator = ShapeIter;
-
-    fn iter(&self) -> Self::Iterator {
-        ShapeIter::FilledCircle(FilledCircleIterator::new(self))
+    fn iter(&self) -> ShapeIterator {
+        ShapeIterator::FilledCircle(self.center, FilledCircleIterator::new(self.radius))
     }
 }
 
@@ -62,13 +59,13 @@ pub struct EmptyCircleIterator {
 }
 
 impl EmptyCircleIterator {
-    fn new(circle: &GridCircleOutline) -> Self {
-        let radius = circle.radius as f32 + 0.5;
+    pub fn new(radius: usize) -> Self {
+        let radius = radius as f32 + 0.5;
         let end = (radius * 0.5_f32.sqrt()).floor() as usize;
 
         EmptyCircleIterator {
             radius,
-            center: circle.center.as_vec2() + 0.5,
+            center: Vec2::splat(0.5),
             r: 0,
             end,
             points: Default::default(),
@@ -116,13 +113,12 @@ pub struct FilledCircleIterator {
 }
 
 impl FilledCircleIterator {
-    pub fn new(circle: &GridCircleFilled) -> Self {
-        let c = circle.center.as_vec2() + 0.5;
-        let r = circle.radius as f32 + 0.5;
+    pub fn new(radius: usize) -> Self {
+        let c = Vec2::splat(0.5);
+        let r = radius as f32 + 0.5;
         let bl = IVec2::new((c.x - r).floor() as i32, (c.y - r).floor() as i32);
         let tr = IVec2::new((c.x + r).ceil() as i32, (c.y + r).ceil() as i32);
-        let rect = GridRect::new(bl, tr - bl);
-        let iter = GridRectIter::new(&rect);
+        let iter = GridRectIter::new((tr - bl).as_uvec2());
         FilledCircleIterator {
             iter,
             center: c,
@@ -149,6 +145,12 @@ fn inside_circle(center: Vec2, point: Vec2, radius: f32) -> bool {
     let d = center - point;
     let dist_sq = d.x * d.x + d.y * d.y;
     dist_sq <= radius * radius
+}
+
+impl From<FilledCircleIterator> for ShapeIterator {
+    fn from(iter: FilledCircleIterator) -> Self {
+        ShapeIterator::FilledCircle(iter.center.as_ivec2(), iter)
+    }
 }
 
 #[cfg(test)]

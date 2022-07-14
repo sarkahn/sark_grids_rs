@@ -4,7 +4,7 @@ use glam::{BVec2, IVec2, Vec2};
 
 use crate::GridPoint;
 
-use super::{GridShape, ShapeIter};
+use super::{GridShape, ShapeIterator};
 
 /// A simple grid line.
 pub struct GridLine {
@@ -22,10 +22,8 @@ impl GridLine {
 }
 
 impl GridShape for GridLine {
-    type Iterator = ShapeIter;
-
-    fn iter(&self) -> Self::Iterator {
-        ShapeIter::Line(LineIter::new(self))
+    fn iter(&self) -> ShapeIterator {
+        ShapeIterator::Line(self.start, LineIter::new(self.end - self.start))
     }
 }
 
@@ -37,12 +35,13 @@ pub struct LineIter {
 }
 
 impl LineIter {
-    fn new(line: &GridLine) -> Self {
+    pub fn new(end: IVec2) -> Self {
+        let start = IVec2::ZERO;
         LineIter {
-            start: line.start,
-            end: line.end,
+            start,
+            end,
             step: 0,
-            dist: diag_distance(line.start, line.end),
+            dist: diag_distance(start, end),
         }
     }
 }
@@ -101,10 +100,8 @@ impl GridLineOrthogonal {
 }
 
 impl GridShape for GridLineOrthogonal {
-    type Iterator = ShapeIter;
-
-    fn iter(&self) -> Self::Iterator {
-        ShapeIter::LineOrtho(LineOrthogonalIter::new(self))
+    fn iter(&self) -> ShapeIterator {
+        ShapeIterator::LineOrtho(self.start, LineOrthogonalIter::new(self.end))
     }
 }
 
@@ -118,9 +115,9 @@ pub struct LineOrthogonalIter {
 }
 
 impl LineOrthogonalIter {
-    pub fn new(line: &GridLineOrthogonal) -> LineOrthogonalIter {
-        let start = line.start.as_vec2();
-        let dxy = line.end.as_vec2() - start;
+    pub fn new(end: IVec2) -> LineOrthogonalIter {
+        let start = Vec2::ZERO;
+        let dxy = end.as_vec2();
         let nxy = dxy.abs();
         let sign = dxy.signum();
 
@@ -128,8 +125,8 @@ impl LineOrthogonalIter {
             i: Vec2::ZERO,
             nxy,
             sign,
+            start: start.as_ivec2(),
             curr: start,
-            start: line.start,
             yielded_start: false,
         }
     }

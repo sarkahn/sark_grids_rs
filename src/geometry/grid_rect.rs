@@ -3,7 +3,7 @@ use glam::{IVec2, UVec2};
 
 use crate::{GridPoint, Size2d};
 
-use super::{GridShape, ShapeIter};
+use super::{GridShape, ShapeIterator};
 
 /// A filled rectangle.
 pub struct GridRect {
@@ -15,6 +15,23 @@ impl GridRect {
     pub fn new(pos: impl GridPoint, size: impl Size2d) -> GridRect {
         GridRect {
             position: pos.as_ivec2(),
+            size: size.as_uvec2(),
+        }
+    }
+
+    pub fn from_min_max(min: impl GridPoint, max: impl GridPoint) -> GridRect {
+        let min = min.as_ivec2();
+        let max = max.as_ivec2();
+        GridRect {
+            position: min,
+            size: (max - min).as_uvec2(),
+        }
+    }
+
+    pub fn from_center_size(center: impl GridPoint, size: impl Size2d) -> GridRect {
+        let position = center.as_ivec2() - (size.as_ivec2() / 2);
+        GridRect {
+            position,
             size: size.as_uvec2(),
         }
     }
@@ -37,25 +54,21 @@ impl GridRect {
 }
 
 impl GridShape for GridRect {
-    type Iterator = ShapeIter;
-
-    fn iter(&self) -> Self::Iterator {
-        ShapeIter::Rect(GridRectIter::new(self))
+    fn iter(&self) -> ShapeIterator {
+        ShapeIterator::Rect(self.position, GridRectIter::new(self.size))
     }
 }
 
 pub struct GridRectIter {
     curr: IVec2,
-    start: IVec2,
-    end: IVec2,
+    size: IVec2,
 }
 
 impl GridRectIter {
-    pub fn new(rect: &GridRect) -> Self {
+    pub fn new(size: UVec2) -> Self {
         GridRectIter {
-            start: rect.position,
-            curr: rect.position,
-            end: rect.position + rect.size.as_ivec2(),
+            curr: IVec2::ZERO,
+            size: size.as_ivec2(),
         }
     }
 }
@@ -64,37 +77,17 @@ impl Iterator for GridRectIter {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.curr.cmpge(self.end).any() {
+        if self.curr.cmpge(self.size).any() {
             return None;
         }
 
         let p = self.curr;
         self.curr.x += 1;
-        if self.curr.x == self.end.x {
-            self.curr.x = self.start.x;
+        if self.curr.x == self.size.x {
+            self.curr.x = 0;
             self.curr.y += 1;
         }
         Some(p)
-    }
-}
-
-pub struct GridBorderIter {
-    curr: IVec2,
-    count: i32,
-    max: i32,
-}
-
-impl Iterator for GridBorderIter {
-    type Item = IVec2;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.count == self.max {
-            return None;
-        };
-        let curr = self.curr;
-        self.count += 1;
-
-        Some(curr)
     }
 }
 
