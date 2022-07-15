@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn iter() {
         let rect = GridRect::new([1, 1], [3, 3]);
-        let mut canvas = Canvas::new([5, 5]);
+        let mut canvas = Canvas::new([6, 6]);
         for p in rect.iter() {
             canvas.put(p, '*');
         }

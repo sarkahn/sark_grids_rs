@@ -88,7 +88,8 @@ pub trait GridPoint: Clone + Copy {
     fn get_pivot(self) -> PivotedPoint;
 
     #[inline]
-    /// The [taxicab distance](https://en.wikipedia.org/wiki/Taxicab_geometry) between two grid points.
+    /// The [taxicab distance](https://en.wikipedia.org/wiki/Taxicab_geometry)
+    /// between two grid points.
     fn taxi_dist(self, other: impl GridPoint) -> usize {
         let d = self.as_ivec2() - other.as_ivec2();
         (d.x.abs() + d.y.abs()) as usize
