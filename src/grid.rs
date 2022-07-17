@@ -60,38 +60,6 @@ impl<T: Clone> Grid<T> {
         Grid::new(T::default(), size)
     }
 
-    /// An iterator over all elements in the grid.
-    #[inline]
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &T> {
-        self.data.iter()
-    }
-
-    /// A mutable iterator over all elements in the grid.
-    #[inline]
-    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut T> {
-        self.data.iter_mut()
-    }
-
-    /// An iterator over a single row of the grid.
-    ///
-    /// Goes from left to right.
-    #[inline]
-    pub fn row_iter(&self, y: usize) -> impl DoubleEndedIterator<Item = &T> {
-        let w = self.width() as usize;
-        let i = y * w;
-        self.data[i..i + w].iter()
-    }
-
-    /// A mutable iterator over a single row of the grid.
-    ///
-    /// Goes from left to right.
-    #[inline]
-    pub fn row_iter_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-        let w = self.width() as usize;
-        let i = y * w;
-        self.data[i..i + w].iter_mut()
-    }
-
     /// Insert into a row of the grid using an iterator.
     ///
     /// Will insert up to the length of a row.
@@ -104,7 +72,7 @@ impl<T: Clone> Grid<T> {
     /// Will insert up to the length of a row.
     pub fn insert_row_at(&mut self, xy: impl GridPoint, row: impl Iterator<Item = T>) {
         let [x, y] = xy.as_array();
-        let iter = self.row_iter_mut(y as usize).skip(x as usize);
+        let iter = self.iter_row_mut(y as usize).skip(x as usize);
         for (v, input) in iter.zip(row) {
             *v = input;
         }
@@ -122,28 +90,10 @@ impl<T: Clone> Grid<T> {
     /// Will insert up to the height of a column.
     pub fn insert_column_at(&mut self, xy: impl GridPoint, column: impl IntoIterator<Item = T>) {
         let [x, y] = xy.as_array();
-        let iter = self.column_iter_mut(x as usize).skip(y as usize);
+        let iter = self.iter_column_mut(x as usize).skip(y as usize);
         for (v, input) in iter.zip(column) {
             *v = input;
         }
-    }
-
-    /// An iterator over a single column of the grid.
-    ///
-    /// Goes from bottom to top.
-    #[inline]
-    pub fn column_iter(&self, x: usize) -> impl DoubleEndedIterator<Item = &T> {
-        let w = self.width() as usize;
-        return self.data[x..].iter().step_by(w);
-    }
-
-    /// A mutable iterator over a single column of the grid.
-    ///
-    /// Goes from bottom to top.
-    #[inline]
-    pub fn column_iter_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-        let w = self.width() as usize;
-        return self.data[x..].iter_mut().step_by(w);
     }
 
     pub fn width(&self) -> usize {
@@ -204,6 +154,104 @@ impl<T: Clone> Grid<T> {
         }
     }
 
+    // Size of the grid along a given axis, where 0 == x and 1 == y
+    pub fn axis_size(&self, axis: usize) -> usize {
+        match axis {
+            0 => self.width() as usize,
+            1 => self.height() as usize,
+            _ => panic!("Invalid grid axis {}", axis),
+        }
+    }
+
+    /// An iterator over all elements in the grid.
+    #[inline]
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &T> {
+        self.data.iter()
+    }
+
+    /// A mutable iterator over all elements in the grid.
+    #[inline]
+    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut T> {
+        self.data.iter_mut()
+    }
+
+    /// An iterator over a single row of the grid.
+    ///
+    /// Goes from left to right.
+    #[inline]
+    pub fn iter_row(&self, y: usize) -> impl DoubleEndedIterator<Item = &T> {
+        let w = self.width() as usize;
+        let i = y * w;
+        self.data[i..i + w].iter()
+    }
+
+    /// A mutable iterator over a single row of the grid.
+    ///
+    /// Goes from left to right.
+    #[inline]
+    pub fn iter_row_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut T> {
+        let w = self.width() as usize;
+        let i = y * w;
+        self.data[i..i + w].iter_mut()
+    }
+
+    /// Iterate over a range of rows.
+    ///
+    /// Yields &\[T\] (Slice of T)
+    pub fn iter_rows(
+        &self,
+        range: impl RangeBounds<usize>,
+    ) -> impl DoubleEndedIterator<Item = &[T]> {
+        let [start, end] = self.range_to_start_end(range, 1);
+        let width = self.width() as usize;
+        let x = start * width;
+        let count = end.saturating_sub(start) + 1;
+        let chunks = self.data[x..].chunks(width);
+        chunks.take(count)
+    }
+
+    /// Iterate mutably over a range of rows.
+    ///
+    /// Yields &mut \[`T`\] (Slice of mutable `T`)
+    pub fn iter_rows_mut(
+        &mut self,
+        range: impl RangeBounds<usize>,
+    ) -> impl DoubleEndedIterator<Item = &mut [T]> {
+        let [start, end] = self.range_to_start_end(range, 1);
+        let width = self.width() as usize;
+        let x = start * width;
+        let count = end - start + 1;
+        let chunks = self.data[x..].chunks_mut(width);
+        chunks.take(count)
+    }
+
+    /// An iterator over a single column of the grid.
+    ///
+    /// Goes from bottom to top.
+    #[inline]
+    pub fn iter_column(&self, x: usize) -> impl DoubleEndedIterator<Item = &T> {
+        let w = self.width() as usize;
+        return self.data[x..].iter().step_by(w);
+    }
+
+    /// A mutable iterator over a single column of the grid.
+    ///
+    /// Goes from bottom to top.
+    #[inline]
+    pub fn iter_column_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut T> {
+        let w = self.width() as usize;
+        return self.data[x..].iter_mut().step_by(w);
+    }
+
+    /// Final index along a given axis, where 0 == width, and 1 == height.
+    pub fn axis_index(&self, axis: usize) -> usize {
+        match axis {
+            0 => self.side_index(Side::Right),
+            1 => self.side_index(Side::Top),
+            _ => panic!("Invalid grid axis {}", axis),
+        }
+    }
+
     /// An iterator over a rectangular portion of the grid defined by the given range.
     ///
     /// Yields `(IVec2, &T)`, where `IVec2` is the corresponding position of the value in the grid.
@@ -247,54 +295,6 @@ impl<T: Clone> Grid<T> {
     pub fn slice_mut(&mut self, slice: impl RangeBounds<usize>) -> &mut [T] {
         let (min, max) = ranges_to_min_max_usize(slice, self.len());
         &mut self.data[min..max]
-    }
-
-    /// Iterate over a range of rows.
-    ///
-    /// Yields &\[T\] (Slice of T)
-    pub fn rows_iter(
-        &self,
-        range: impl RangeBounds<usize>,
-    ) -> impl DoubleEndedIterator<Item = &[T]> {
-        let [start, end] = self.range_to_start_end(range, 1);
-        let width = self.width() as usize;
-        let x = start * width;
-        let count = end.saturating_sub(start) + 1;
-        let chunks = self.data[x..].chunks(width);
-        chunks.take(count)
-    }
-
-    /// Iterate mutably over a range of rows.
-    ///
-    /// Yields &mut \[`T`\] (Slice of mutable `T`)
-    pub fn rows_iter_mut(
-        &mut self,
-        range: impl RangeBounds<usize>,
-    ) -> impl DoubleEndedIterator<Item = &mut [T]> {
-        let [start, end] = self.range_to_start_end(range, 1);
-        let width = self.width() as usize;
-        let x = start * width;
-        let count = end - start + 1;
-        let chunks = self.data[x..].chunks_mut(width);
-        chunks.take(count)
-    }
-
-    /// Final index along a given axis, where 0 == width, and 1 == height.
-    pub fn axis_index(&self, axis: usize) -> usize {
-        match axis {
-            0 => self.side_index(Side::Right),
-            1 => self.side_index(Side::Top),
-            _ => panic!("Invalid grid axis {}", axis),
-        }
-    }
-
-    // Size of the grid along a given axis, where 0 == x and 1 == y
-    pub fn axis_size(&self, axis: usize) -> usize {
-        match axis {
-            0 => self.width() as usize,
-            1 => self.height() as usize,
-            _ => panic!("Invalid grid axis {}", axis),
-        }
     }
 
     /// Convert a range into a [start,end] pair.
@@ -419,7 +419,7 @@ mod tests {
         grid.insert_row(3, std::iter::repeat(5));
         grid.insert_row(4, std::iter::repeat(6));
 
-        let mut iter = grid.rows_iter(3..=4);
+        let mut iter = grid.iter_rows(3..=4);
 
         assert!(iter.next().unwrap().iter().all(|v| *v == 5));
         assert!(iter.next().unwrap().iter().all(|v| *v == 6));
@@ -428,7 +428,7 @@ mod tests {
     #[test]
     fn rows_iter_mut() {
         let mut grid = Grid::default([3, 4]);
-        for row in grid.rows_iter_mut(..) {
+        for row in grid.iter_rows_mut(..) {
             row.iter_mut().for_each(|v| *v = 5);
         }
 
@@ -441,15 +441,15 @@ mod tests {
 
         let chars = "hello".chars();
 
-        for (elem, ch) in grid.row_iter_mut(3).take(5).zip(chars) {
+        for (elem, ch) in grid.iter_row_mut(3).take(5).zip(chars) {
             *elem = ch;
         }
 
-        let hello = grid.row_iter(3).take(5).collect::<String>();
+        let hello = grid.iter_row(3).take(5).collect::<String>();
 
         assert_eq!("hello", hello);
 
-        assert_eq!(grid.row_iter(6).count(), 10);
+        assert_eq!(grid.iter_row(6).count(), 10);
     }
 
     #[test]
@@ -458,15 +458,15 @@ mod tests {
 
         let chars = ['h', 'e', 'l', 'l', 'o'];
 
-        for (elem, ch) in grid.column_iter_mut(5).take(5).zip(chars) {
+        for (elem, ch) in grid.iter_column_mut(5).take(5).zip(chars) {
             *elem = ch;
         }
 
-        let hello = grid.column_iter(5).take(5).collect::<String>();
+        let hello = grid.iter_column(5).take(5).collect::<String>();
 
         assert_eq!("hello", hello);
 
-        assert_eq!(grid.column_iter(2).count(), 15);
+        assert_eq!(grid.iter_column(2).count(), 15);
     }
 
     #[test]
@@ -545,7 +545,7 @@ mod tests {
 
         grid.insert_column(3, "Hello".chars());
 
-        let hello: String = grid.column_iter(3).take(5).collect();
+        let hello: String = grid.iter_column(3).take(5).collect();
 
         assert_eq!(hello, "Hello");
     }
@@ -556,7 +556,7 @@ mod tests {
 
         grid.insert_row(3, "Hello".chars());
 
-        let hello: String = grid.row_iter(3).take(5).collect();
+        let hello: String = grid.iter_row(3).take(5).collect();
 
         assert_eq!(hello, "Hello");
     }
