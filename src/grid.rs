@@ -62,13 +62,13 @@ impl<T: Clone> Grid<T> {
 
     /// An iterator over all elements in the grid.
     #[inline]
-    pub fn iter(&self) -> impl Iterator<Item = &T> {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &T> {
         self.data.iter()
     }
 
     /// A mutable iterator over all elements in the grid.
     #[inline]
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut T> {
+    pub fn iter_mut(&mut self) -> impl DoubleEndedIterator<Item = &mut T> {
         self.data.iter_mut()
     }
 
@@ -76,7 +76,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from left to right.
     #[inline]
-    pub fn row_iter(&self, y: usize) -> impl Iterator<Item = &T> {
+    pub fn row_iter(&self, y: usize) -> impl DoubleEndedIterator<Item = &T> {
         let w = self.width() as usize;
         let i = y * w;
         self.data[i..i + w].iter()
@@ -86,7 +86,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from left to right.
     #[inline]
-    pub fn row_iter_mut(&mut self, y: usize) -> impl Iterator<Item = &mut T> {
+    pub fn row_iter_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut T> {
         let w = self.width() as usize;
         let i = y * w;
         self.data[i..i + w].iter_mut()
@@ -95,7 +95,7 @@ impl<T: Clone> Grid<T> {
     /// Insert into a row of the grid using an iterator.
     ///
     /// Will insert up to the length of a row.
-    pub fn insert_row(&mut self, y: usize, row: impl Iterator<Item = T>) {
+    pub fn insert_row(&mut self, y: usize, row: impl DoubleEndedIterator<Item = T>) {
         self.insert_row_at([0, y as i32], row);
     }
 
@@ -132,7 +132,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from bottom to top.
     #[inline]
-    pub fn column_iter(&self, x: usize) -> impl Iterator<Item = &T> {
+    pub fn column_iter(&self, x: usize) -> impl DoubleEndedIterator<Item = &T> {
         let w = self.width() as usize;
         return self.data[x..].iter().step_by(w);
     }
@@ -141,7 +141,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Goes from bottom to top.
     #[inline]
-    pub fn column_iter_mut(&mut self, x: usize) -> impl Iterator<Item = &mut T> {
+    pub fn column_iter_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut T> {
         let w = self.width() as usize;
         return self.data[x..].iter_mut().step_by(w);
     }
@@ -252,7 +252,10 @@ impl<T: Clone> Grid<T> {
     /// Iterate over a range of rows.
     ///
     /// Yields &\[T\] (Slice of T)
-    pub fn rows_iter(&self, range: impl RangeBounds<usize>) -> impl Iterator<Item = &[T]> {
+    pub fn rows_iter(
+        &self,
+        range: impl RangeBounds<usize>,
+    ) -> impl DoubleEndedIterator<Item = &[T]> {
         let [start, end] = self.range_to_start_end(range, 1);
         let width = self.width() as usize;
         let x = start * width;
@@ -267,7 +270,7 @@ impl<T: Clone> Grid<T> {
     pub fn rows_iter_mut(
         &mut self,
         range: impl RangeBounds<usize>,
-    ) -> impl Iterator<Item = &mut [T]> {
+    ) -> impl DoubleEndedIterator<Item = &mut [T]> {
         let [start, end] = self.range_to_start_end(range, 1);
         let width = self.width() as usize;
         let x = start * width;
