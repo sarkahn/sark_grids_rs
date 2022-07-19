@@ -28,7 +28,7 @@ use std::ops::{Bound, Index, IndexMut, RangeBounds};
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{GridPoint, Pivot, Size2d};
+use crate::{point::Point2d, GridPoint, Pivot, Size2d};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///
@@ -129,6 +129,16 @@ impl<T: Clone> Grid<T> {
         let x = index % w;
         let y = index / w;
         IVec2::new(x, y)
+    }
+
+    /// Convert a 2d grid position to it's equivalent world position.
+    pub fn grid_to_world(&self, p: impl GridPoint) -> IVec2 {
+        p.as_ivec2() - self.size.as_ivec2() / 2
+    }
+
+    /// Convert from a 2d world position to it's grid position.
+    pub fn world_to_grid(&self, p: impl Point2d) -> IVec2 {
+        p.as_vec2().floor().as_ivec2() + self.size.as_ivec2() / 2
     }
 
     /// Get the position of the given pivot point on the grid.
