@@ -41,7 +41,7 @@ impl From<Dir4> for IVec2 {
 }
 
 impl Dir4 {
-    /// Retrieve the direction from the given point, or none if it's [0,0].
+    /// Retrieve the direction from the given point, or none if it's (0,0).
     pub fn from_point(p: impl GridPoint) -> Option<Dir4> {
         match p.as_ivec2().signum().to_array() {
             [0, 1] => Some(Dir4::Up),
@@ -88,7 +88,7 @@ pub enum Dir8 {
 }
 
 impl Dir8 {
-    /// Retrieve the direction from the given point, or none if it's [0,0].
+    /// Retrieve the direction from the given point, or none if it's (0,0).
     pub fn from_point(p: impl GridPoint) -> Option<Dir8> {
         match p.as_ivec2().signum().to_array() {
             [0, 1] => Some(Dir8::Up),

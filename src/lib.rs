@@ -13,3 +13,9 @@ pub use pivot::Pivot;
 pub use pivot::PivotedPoint;
 pub use point::GridPoint;
 pub use point::Size2d;
+
+pub mod prelude {
+    pub use crate::{
+        grid::Grid, pivot::Pivot, pivot::PivotedPoint, point::GridPoint, point::Size2d,
+    };
+}

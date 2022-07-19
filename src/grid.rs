@@ -7,7 +7,7 @@
 //! # Example
 //!
 //! ```
-//! use sark_grids::grid::Grid;
+//! use sark_grids::prelude::*;
 //!
 //! let mut grid = Grid::default([10,10]);
 //!
@@ -18,7 +18,7 @@
 //! assert_eq!('b', grid[ [1,0] ]);
 //!
 //! grid.insert_column_at([3,2], "hello".chars());
-//! let hello: String = grid.column_iter(3).skip(2).take(5).collect();
+//! let hello: String = grid.iter_column(3).skip(2).take(5).collect();
 //!
 //! assert_eq!("hello", hello);
 //! ```
@@ -28,7 +28,7 @@ use std::ops::{Bound, Index, IndexMut, RangeBounds};
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::*;
+use crate::{GridPoint, Pivot, Size2d};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 ///
