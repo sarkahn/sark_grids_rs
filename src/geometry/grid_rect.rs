@@ -40,7 +40,7 @@ impl GridRect {
         }
     }
 
-    /// Returns the rect with it's center moved to it's current position.
+    /// Returns a new rect with it's center moved to it's current position.
     pub fn centered(&self) -> GridRect {
         GridRect::from_center_size(self.pos, self.size)
     }

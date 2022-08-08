@@ -7,7 +7,7 @@ use crate::GridPoint;
 
 use super::{grid_rect::GridRectIter, GridRect};
 
-/// A filled circle.
+/// A filled circle. Points within the circle can be iterator over.
 #[derive(Default, Debug, Clone, Copy)]
 pub struct GridCircle {
     center: IVec2,
@@ -20,6 +20,16 @@ impl GridCircle {
             center: center.as_ivec2(),
             radius,
         }
+    }
+
+    /// Create a circle centered at 0,0
+    pub fn origin(radius: usize) -> Self {
+        Self::new([0, 0], radius)
+    }
+
+    /// Create an outlined circle with this filled circles position and size.
+    pub fn outline(&self) -> GridCircleOutline {
+        GridCircleOutline::new(self.center, self.radius)
     }
 }
 
@@ -94,6 +104,11 @@ impl GridCircleOutline {
     /// Create a circle centered a 0,0
     pub fn origin(radius: usize) -> Self {
         Self::new([0, 0], radius)
+    }
+
+    /// Create a filled circle with this circle's center and radius
+    pub fn filled(&self) -> GridCircle {
+        GridCircle::new(self.center, self.radius)
     }
 }
 

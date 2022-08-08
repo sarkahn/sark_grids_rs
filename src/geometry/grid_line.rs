@@ -105,6 +105,7 @@ impl GridLineOrtho {
         }
     }
 
+    /// Create a line with it's start point at 0,0
     pub fn origin(end: impl GridPoint) -> Self {
         Self::new([0, 0], end)
     }
