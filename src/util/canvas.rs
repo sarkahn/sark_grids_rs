@@ -31,16 +31,9 @@ impl Canvas {
     }
 
     pub fn print(&self) {
-        for y in 0..self.size.y {
-            let i = self.to_index([0, y]);
-            let string = self
-                .string
-                .chars()
-                .skip(i)
-                .take(self.size.x as usize)
-                .collect::<String>();
-            let string = string.replace(' ', ".");
-            println!("{}", string);
+        let chars: Vec<_> = self.string.replace(' ', ".").chars().collect();
+        for line in chars.chunks(self.size.x as usize).rev() {
+            println!("{}", String::from_iter(line.iter()));
         }
     }
 }

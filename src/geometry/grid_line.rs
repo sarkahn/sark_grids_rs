@@ -4,9 +4,7 @@ use glam::{BVec2, IVec2, Vec2};
 
 use crate::GridPoint;
 
-use super::{GridShape, ShapeIterator};
-
-/// A simple grid line.
+#[derive(Default, Debug, Clone, Copy)]
 pub struct GridLine {
     start: IVec2,
     end: IVec2,
@@ -19,25 +17,25 @@ impl GridLine {
             end: end.as_ivec2(),
         }
     }
-}
 
-impl GridShape for GridLine {
-    fn iter(&self) -> ShapeIterator {
-        ShapeIterator::Line(self.start, LineIter::new(self.end - self.start))
+    /// Create a line with the start point at 0,0
+    pub fn origin(end: impl GridPoint) -> Self {
+        Self::new([0, 0], end)
     }
 }
 
-pub struct LineIter {
+pub struct GridLineIter {
+    start: IVec2,
     dist: i32,
     step: i32,
-    start: IVec2,
     end: IVec2,
 }
 
-impl LineIter {
-    pub fn new(end: IVec2) -> Self {
-        let start = IVec2::ZERO;
-        LineIter {
+impl GridLineIter {
+    pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
+        let start = start.as_ivec2();
+        let end = end.as_ivec2();
+        GridLineIter {
             start,
             end,
             step: 0,
@@ -46,7 +44,7 @@ impl LineIter {
     }
 }
 
-impl Iterator for LineIter {
+impl Iterator for GridLineIter {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -58,6 +56,15 @@ impl Iterator for LineIter {
         self.step += 1;
 
         Some(lerp_pos(self.start, self.end, t))
+    }
+}
+
+impl IntoIterator for GridLine {
+    type Item = IVec2;
+    type IntoIter = GridLineIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        GridLineIter::new(self.start, self.end)
     }
 }
 
@@ -84,28 +91,26 @@ fn diag_distance(p1: IVec2, p2: IVec2) -> i32 {
     i32::max(d.x.abs(), d.y.abs())
 }
 
-/// An grid line with only orthogonal movement.
-pub struct GridLineOrthogonal {
+#[derive(Default, Debug, Clone, Copy)]
+pub struct GridLineOrtho {
     start: IVec2,
     end: IVec2,
 }
 
-impl GridLineOrthogonal {
+impl GridLineOrtho {
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
         Self {
             start: start.as_ivec2(),
             end: end.as_ivec2(),
         }
     }
-}
 
-impl GridShape for GridLineOrthogonal {
-    fn iter(&self) -> ShapeIterator {
-        ShapeIterator::LineOrtho(self.start, LineOrthogonalIter::new(self.end))
+    pub fn origin(end: impl GridPoint) -> Self {
+        Self::new([0, 0], end)
     }
 }
 
-pub struct LineOrthogonalIter {
+pub struct GridLineOrthoIter {
     nxy: Vec2,
     i: Vec2,
     sign: Vec2,
@@ -114,25 +119,26 @@ pub struct LineOrthogonalIter {
     yielded_start: bool,
 }
 
-impl LineOrthogonalIter {
-    pub fn new(end: IVec2) -> LineOrthogonalIter {
-        let start = Vec2::ZERO;
+impl GridLineOrthoIter {
+    pub fn new(start: impl GridPoint, end: impl GridPoint) -> GridLineOrthoIter {
+        let end = end.as_ivec2();
+        let start = start.as_ivec2();
         let dxy = end.as_vec2();
         let nxy = dxy.abs();
         let sign = dxy.signum();
 
-        LineOrthogonalIter {
+        GridLineOrthoIter {
             i: Vec2::ZERO,
             nxy,
             sign,
-            start: start.as_ivec2(),
-            curr: start,
+            start,
+            curr: start.as_vec2(),
             yielded_start: false,
         }
     }
 }
 
-impl Iterator for LineOrthogonalIter {
+impl Iterator for GridLineOrthoIter {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -161,6 +167,15 @@ impl Iterator for LineOrthogonalIter {
     }
 }
 
+impl IntoIterator for GridLineOrtho {
+    type Item = IVec2;
+    type IntoIter = GridLineOrthoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        GridLineOrthoIter::new(self.start, self.end)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::util::Canvas;
@@ -169,9 +184,8 @@ mod tests {
 
     #[test]
     fn line() {
-        let line = GridLine::new([9, 4], [0, 0]);
         let mut canvas = Canvas::new([10, 5]);
-        for p in line.iter() {
+        for p in GridLine::origin([9, 4]) {
             canvas.put(p, '*');
         }
         canvas.print();
@@ -179,9 +193,8 @@ mod tests {
 
     #[test]
     fn line_orthogonal() {
-        let line = GridLineOrthogonal::new([9, 4], [0, 0]);
         let mut canvas = Canvas::new([10, 5]);
-        for p in line.iter() {
+        for p in GridLineOrtho::origin([9, 4]) {
             canvas.put(p, '*');
         }
         canvas.print();

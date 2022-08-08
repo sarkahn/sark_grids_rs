@@ -53,7 +53,7 @@ impl From<Pivot> for Vec2 {
 }
 
 /// A 2d point on a rect aligned to a certain [Pivot].
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct PivotedPoint {
     pub point: IVec2,
     pub pivot: Pivot,

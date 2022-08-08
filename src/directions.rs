@@ -21,7 +21,7 @@ pub const DIR_8: &[IVec2] = &[
 ];
 
 /// Four orthogonal directions on a 2d grid.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Dir4 {
     Up,
     Down,
@@ -75,7 +75,7 @@ impl Dir4 {
 }
 
 /// 8 directions on a 2d grid.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Dir8 {
     Up,
     Down,
