@@ -5,10 +5,10 @@ use glam::{IVec2, UVec2, Vec2};
 
 use crate::GridPoint;
 
-use super::{grid_rect::GridRectIter, GridRect};
+use super::{grid_rect::GridRectIter, GridRect, GridShape};
 
 /// A filled circle. Points within the circle can be iterator over.
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridCircle {
     center: IVec2,
     radius: usize,
@@ -33,6 +33,13 @@ impl GridCircle {
     }
 }
 
+impl GridShape for GridCircle {
+    fn iter(&self) -> super::GridShapeIterator {
+        super::GridShapeIterator::Circle(self.into_iter())
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct GridCircleIter {
     iter: GridRectIter,
     center: Vec2,
@@ -87,7 +94,7 @@ impl IntoIterator for GridCircle {
 }
 
 /// A hollow circle.
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridCircleOutline {
     center: IVec2,
     radius: usize,
@@ -112,6 +119,7 @@ impl GridCircleOutline {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct GridCircleOutlineIter {
     radius: f32,
     center: IVec2,
@@ -119,6 +127,12 @@ pub struct GridCircleOutlineIter {
     end: usize,
     points: [IVec2; 8],
     curr: usize,
+}
+
+impl GridShape for GridCircleOutline {
+    fn iter(&self) -> super::GridShapeIterator {
+        super::GridShapeIterator::CircleOutline(self.into_iter())
+    }
 }
 
 impl GridCircleOutlineIter {

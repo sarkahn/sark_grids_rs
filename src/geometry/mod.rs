@@ -2,9 +2,46 @@
 mod grid_circle;
 mod grid_line;
 mod grid_rect;
+mod grid_cone;
+use glam::IVec2;
+
+use self::grid_circle::GridCircleIter;
+use self::grid_circle::GridCircleOutlineIter;
+use self::grid_line::GridLineIter;
+use self::grid_line::GridLineOrthoIter;
+use self::grid_rect::GridRectIter;
 
 pub use grid_circle::GridCircle;
 pub use grid_circle::GridCircleOutline;
 pub use grid_line::GridLine;
 pub use grid_line::GridLineOrtho;
 pub use grid_rect::GridRect;
+
+pub trait GridShape: Clone + Copy + Sync + Send + 'static {
+    fn iter(&self) -> GridShapeIterator;
+}
+
+#[derive(Debug)]
+pub enum GridShapeIterator {
+    Point(std::iter::Once<IVec2>),
+    Circle(GridCircleIter),
+    CircleOutline(GridCircleOutlineIter),
+    Rect(GridRectIter),
+    Line(GridLineIter),
+    LineOrtho(GridLineOrthoIter),
+}
+
+impl Iterator for GridShapeIterator {
+    type Item=IVec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            GridShapeIterator::Point(i) => i.next(),
+            GridShapeIterator::Circle(i) => i.next(),
+            GridShapeIterator::CircleOutline(i) => i.next(),
+            GridShapeIterator::Rect(i) => i.next(),
+            GridShapeIterator::Line(i) => i.next(),
+            GridShapeIterator::LineOrtho(i) => i.next(),
+        }
+    }
+}

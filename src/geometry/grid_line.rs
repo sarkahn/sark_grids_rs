@@ -4,7 +4,9 @@ use glam::{BVec2, IVec2, Vec2};
 
 use crate::GridPoint;
 
-#[derive(Default, Debug, Clone, Copy)]
+use super::GridShape;
+
+#[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridLine {
     start: IVec2,
     end: IVec2,
@@ -24,6 +26,13 @@ impl GridLine {
     }
 }
 
+impl GridShape for GridLine {
+    fn iter(&self) -> super::GridShapeIterator {
+        super::GridShapeIterator::Line(self.into_iter())
+    }
+}
+
+#[derive(Debug,Clone)]
 pub struct GridLineIter {
     start: IVec2,
     dist: i32,
@@ -91,7 +100,7 @@ fn diag_distance(p1: IVec2, p2: IVec2) -> i32 {
     i32::max(d.x.abs(), d.y.abs())
 }
 
-#[derive(Default, Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridLineOrtho {
     start: IVec2,
     end: IVec2,
@@ -111,6 +120,13 @@ impl GridLineOrtho {
     }
 }
 
+impl GridShape for GridLineOrtho {
+    fn iter(&self) -> super::GridShapeIterator {
+        super::GridShapeIterator::LineOrtho(self.into_iter())
+    }
+}
+
+#[derive(Debug,Clone)]
 pub struct GridLineOrthoIter {
     nxy: Vec2,
     i: Vec2,

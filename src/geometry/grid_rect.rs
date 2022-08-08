@@ -3,8 +3,10 @@ use glam::{IVec2, UVec2};
 
 use crate::{GridPoint, Size2d};
 
+use super::GridShape;
+
 /// A filled rectangle.
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridRect {
     pub pos: IVec2,
     pub size: UVec2,
@@ -62,6 +64,13 @@ impl GridRect {
     }
 }
 
+impl GridShape for GridRect {
+    fn iter(&self) -> super::GridShapeIterator {
+        super::GridShapeIterator::Rect(self.into_iter())
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct GridRectIter {
     pos: IVec2,
     curr: IVec2,
