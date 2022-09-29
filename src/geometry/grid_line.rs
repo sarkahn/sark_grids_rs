@@ -32,7 +32,7 @@ impl GridShape for GridLine {
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct GridLineIter {
     start: IVec2,
     dist: i32,
@@ -126,7 +126,7 @@ impl GridShape for GridLineOrtho {
     }
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct GridLineOrthoIter {
     nxy: Vec2,
     i: Vec2,
