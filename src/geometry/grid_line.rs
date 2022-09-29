@@ -1,11 +1,12 @@
 //! Utility for drawing lines on a 2d grid.
 // https://www.redblobgames.com/grids/line-drawing.html
-use glam::{BVec2, IVec2, Vec2};
+use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
 use super::GridShape;
 
+/// A line of points on a grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridLine {
     start: IVec2,
@@ -13,6 +14,8 @@ pub struct GridLine {
 }
 
 impl GridLine {
+    /// Create a new grid line. Note that `end` is included and will be
+    /// the final point on the line.
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
         GridLine {
             start: start.as_ivec2(),
@@ -100,6 +103,10 @@ fn diag_distance(p1: IVec2, p2: IVec2) -> i32 {
     i32::max(d.x.abs(), d.y.abs())
 }
 
+/// An orthogonal line of points on a grid.
+///
+/// Unlike [GridLine] every point on this line is orthogonal to the next so
+/// there are no diagonal jumps between points.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridLineOrtho {
     start: IVec2,
@@ -107,6 +114,8 @@ pub struct GridLineOrtho {
 }
 
 impl GridLineOrtho {
+    /// Create a new orthogonal line. Note that `end` is included and will be
+    /// the final point on the line.
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
         Self {
             start: start.as_ivec2(),
@@ -114,7 +123,7 @@ impl GridLineOrtho {
         }
     }
 
-    /// Create a line with it's start point at 0,0
+    /// Create an orthogonal line with it's start point at 0,0
     pub fn origin(end: impl GridPoint) -> Self {
         Self::new([0, 0], end)
     }
@@ -128,30 +137,39 @@ impl GridShape for GridLineOrtho {
 
 #[derive(Debug, Clone)]
 pub struct GridLineOrthoIter {
-    nxy: Vec2,
-    i: Vec2,
-    sign: Vec2,
-    curr: Vec2,
-    start: IVec2,
-    yielded_start: bool,
+    n: IVec2,
+    p: IVec2,
+    i: IVec2,
+    sign: IVec2,
 }
 
 impl GridLineOrthoIter {
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> GridLineOrthoIter {
         let end = end.as_ivec2();
         let start = start.as_ivec2();
-        let dxy = end.as_vec2();
-        let nxy = dxy.abs();
-        let sign = dxy.signum();
+        let d = end - start;
+        let n = d.abs();
+        let sign = d.signum();
+        // Offset so we can add direction on first step
+        let first = next_dir(IVec2::ZERO, n, sign);
 
         GridLineOrthoIter {
-            i: Vec2::ZERO,
-            nxy,
+            n,
+            p: start - first,
+            i: -first.abs(),
             sign,
-            start,
-            curr: start.as_vec2(),
-            yielded_start: false,
         }
+    }
+}
+fn next_dir(i: IVec2, n: IVec2, sign: IVec2) -> IVec2 {
+    let i = i.as_vec2();
+    let n = n.as_vec2();
+    if (0.5 + i.x) / n.x < (0.5 + i.y) / n.y {
+        // Horizontal
+        IVec2::new(sign.x, 0)
+    } else {
+        // Vertical
+        IVec2::new(0, sign.y)
     }
 }
 
@@ -159,28 +177,17 @@ impl Iterator for GridLineOrthoIter {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.i.cmpge(self.nxy).any() {
+        let dir = next_dir(self.i, self.n, self.sign);
+
+        self.i += dir.abs();
+
+        if self.i.cmpgt(self.n).any() {
             return None;
         }
-        if !self.yielded_start {
-            self.yielded_start = true;
-            return Some(self.start);
-        }
 
-        let cmp = (self.i + 0.5) / self.nxy;
-        let cmp = if cmp.x < cmp.y {
-            BVec2::new(true, false)
-        } else {
-            BVec2::new(false, true)
-        };
+        self.p += dir;
 
-        let cd = Vec2::select(cmp, self.sign, Vec2::ZERO);
-        let id = Vec2::select(cmp, Vec2::ONE, Vec2::ZERO);
-
-        self.curr += cd;
-        self.i += id;
-
-        Some(self.curr.as_ivec2())
+        Some(self.p)
     }
 }
 
@@ -201,8 +208,14 @@ mod tests {
 
     #[test]
     fn line() {
-        let mut canvas = Canvas::new([10, 5]);
-        for p in GridLine::origin([9, 4]) {
+        let mut canvas = Canvas::new([11, 7]);
+        let lines = [
+            GridLine::new([5, 3], [10, 5]),
+            GridLine::new([5, 3], [10, 1]),
+            GridLine::new([5, 3], [0, 1]),
+            GridLine::new([5, 3], [0, 5]),
+        ];
+        for p in lines.iter().flat_map(|l| l.iter()) {
             canvas.put(p, '*');
         }
         canvas.print();
@@ -210,8 +223,14 @@ mod tests {
 
     #[test]
     fn line_orthogonal() {
-        let mut canvas = Canvas::new([10, 5]);
-        for p in GridLineOrtho::origin([9, 4]) {
+        let mut canvas = Canvas::new([20, 20]);
+        let lines = [
+            GridLineOrtho::new([5, 5], [10, 9]),
+            GridLineOrtho::new([5, 5], [10, 1]),
+            GridLineOrtho::new([5, 5], [0, 1]),
+            GridLineOrtho::new([5, 5], [0, 9]),
+        ];
+        for p in lines.iter().flat_map(|l| l.iter()) {
             canvas.put(p, '*');
         }
         canvas.print();

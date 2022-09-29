@@ -5,7 +5,7 @@ use crate::{GridPoint, Size2d};
 
 use super::GridShape;
 
-/// A filled rectangle.
+/// A rectangle of points on a grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridRect {
     pub pos: IVec2,
@@ -23,6 +23,11 @@ impl GridRect {
     /// Create a grid rect with it's position set to 0,0
     pub fn origin(size: impl Size2d) -> Self {
         Self::new([0, 0], size)
+    }
+
+    /// Create a grid rect with it's center at 0,0
+    pub fn origin_centered(size: impl Size2d) -> Self {
+        Self::from_center_size([0, 0], size)
     }
 
     pub fn from_min_max(min: impl GridPoint, max: impl GridPoint) -> GridRect {
@@ -61,6 +66,14 @@ impl GridRect {
 
     pub fn center(&self) -> IVec2 {
         self.pos + self.size.as_ivec2() / 2
+    }
+
+    /// Return a rect with the same center but resized by the given amount
+    pub fn resized(&self, amount: impl GridPoint) -> GridRect {
+        let size = (self.size.as_ivec2() + amount.as_ivec2())
+            .max(IVec2::ONE)
+            .as_uvec2();
+        GridRect::from_center_size(self.center(), size)
     }
 }
 

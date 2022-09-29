@@ -16,6 +16,9 @@ pub struct GridCone {
 
 impl GridCone {
     /// Create a new grid from angles represented in degrees.
+    ///
+    /// Note an angle of `0.` points to the right, and an angle of `90.` points
+    /// straight up (angle increases counter-clockwise).
     pub fn new(xy: impl GridPoint, dir_deg: f32, size_deg: f32, range: usize) -> Self {
         Self {
             pos: xy.as_ivec2(),
@@ -206,6 +209,18 @@ mod test {
             }
         }
 
+        canvas.print();
+    }
+
+    #[test]
+    fn dir() {
+        let cone1 = GridCone::new([6, 3], 0.0, 45.0, 5);
+        let cone2 = GridCone::new([6, 3], 90.0, 45.0, 5);
+        let mut canvas = Canvas::new([15, 11]);
+        for (a, b) in cone1.iter().zip(cone2) {
+            canvas.put(a, '*');
+            canvas.put(b, '*');
+        }
         canvas.print();
     }
 }
