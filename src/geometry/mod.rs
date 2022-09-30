@@ -20,6 +20,8 @@ pub use grid_rect::GridRect;
 
 pub trait GridShape: Sync + Send + 'static {
     fn iter(&self) -> GridShapeIterator;
+    fn pos(&self) -> IVec2;
+    fn set_pos(&mut self, pos: IVec2);
 }
 
 #[derive(Debug, Clone)]

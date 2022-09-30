@@ -73,6 +73,14 @@ impl GridShape for GridCone {
     fn iter(&self) -> super::GridShapeIterator {
         GridShapeIterator::Cone(GridConeIter::from_cone(self))
     }
+
+    fn pos(&self) -> IVec2 {
+        self.pos
+    }
+
+    fn set_pos(&mut self, pos: IVec2) {
+        self.pos = pos;
+    }
 }
 
 impl Iterator for GridConeIter {

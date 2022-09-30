@@ -37,6 +37,14 @@ impl GridShape for GridCircle {
     fn iter(&self) -> super::GridShapeIterator {
         super::GridShapeIterator::Circle(self.into_iter())
     }
+
+    fn pos(&self) -> IVec2 {
+        self.center
+    }
+
+    fn set_pos(&mut self, pos: IVec2) {
+        self.center = pos;
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -132,6 +140,14 @@ pub struct GridCircleOutlineIter {
 impl GridShape for GridCircleOutline {
     fn iter(&self) -> super::GridShapeIterator {
         super::GridShapeIterator::CircleOutline(self.into_iter())
+    }
+
+    fn pos(&self) -> IVec2 {
+        self.center
+    }
+
+    fn set_pos(&mut self, pos: IVec2) {
+        self.center = pos;
     }
 }
 

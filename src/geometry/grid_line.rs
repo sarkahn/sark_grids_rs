@@ -33,6 +33,16 @@ impl GridShape for GridLine {
     fn iter(&self) -> super::GridShapeIterator {
         super::GridShapeIterator::Line(self.into_iter())
     }
+
+    fn pos(&self) -> IVec2 {
+        self.start
+    }
+
+    fn set_pos(&mut self, pos: IVec2) {
+        let v = self.end - self.start;
+        self.start = pos;
+        self.end = self.start + v;
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -132,6 +142,16 @@ impl GridLineOrtho {
 impl GridShape for GridLineOrtho {
     fn iter(&self) -> super::GridShapeIterator {
         super::GridShapeIterator::LineOrtho(self.into_iter())
+    }
+
+    fn pos(&self) -> IVec2 {
+        self.start
+    }
+
+    fn set_pos(&mut self, pos: IVec2) {
+        let v = self.end - self.start;
+        self.start = pos;
+        self.end = self.start + v;
     }
 }
 
