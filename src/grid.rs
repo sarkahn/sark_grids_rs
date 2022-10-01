@@ -296,15 +296,13 @@ impl<T: Clone> Grid<T> {
     }
 
     /// Retrieve a linear slice of the underlying grid data.
-    pub fn slice(&self, slice: impl RangeBounds<usize>) -> &[T] {
-        let (min, max) = ranges_to_min_max_usize(slice, self.len());
-        &self.data[min..max]
+    pub fn slice(&self) -> &[T] {
+        self.data.as_slice()
     }
 
     /// Retrieve a mutable linear slice of the underlying grid data.
-    pub fn slice_mut(&mut self, slice: impl RangeBounds<usize>) -> &mut [T] {
-        let (min, max) = ranges_to_min_max_usize(slice, self.len());
-        &mut self.data[min..max]
+    pub fn slice_mut(&mut self) -> &mut [T] {
+        self.data.as_mut_slice()
     }
 
     /// Convert a range into a [start,end] pair.
@@ -324,25 +322,6 @@ impl<T: Clone> Grid<T> {
 
         [start, end]
     }
-}
-
-fn ranges_to_min_max_usize(range: impl RangeBounds<usize>, max: usize) -> (usize, usize) {
-    let range_min = match range.start_bound() {
-        std::ops::Bound::Included(v) => *v,
-        std::ops::Bound::Excluded(v) => *v,
-        std::ops::Bound::Unbounded => 0,
-    };
-
-    let range_max = match range.end_bound() {
-        std::ops::Bound::Included(v) => *v,
-        std::ops::Bound::Excluded(v) => v.saturating_sub(1),
-        std::ops::Bound::Unbounded => max,
-    };
-
-    debug_assert!(range_min < range_max);
-    debug_assert!(range_max <= max);
-
-    (range_min, range_max)
 }
 
 fn ranges_to_min_max(range: impl RangeBounds<[i32; 2]>, max: IVec2) -> (IVec2, IVec2) {

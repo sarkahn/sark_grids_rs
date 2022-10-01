@@ -18,7 +18,7 @@ pub use grid_line::GridLine;
 pub use grid_line::GridLineOrtho;
 pub use grid_rect::GridRect;
 
-pub trait GridShape: Sync + Send + 'static {
+pub trait GridShape: ShapeClone + Sync + Send + 'static {
     fn iter(&self) -> GridShapeIterator;
     fn pos(&self) -> IVec2;
     fn set_pos(&mut self, pos: IVec2);
@@ -48,5 +48,41 @@ impl Iterator for GridShapeIterator {
             GridShapeIterator::LineOrtho(i) => i.next(),
             GridShapeIterator::Cone(i) => i.next(),
         }
+    }
+}
+
+pub trait ShapeClone {
+    fn clone_box(&self) -> Box<dyn GridShape>;
+}
+
+impl<T> ShapeClone for T
+where
+    T: 'static + GridShape + Clone,
+{
+    fn clone_box(&self) -> Box<dyn GridShape> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn GridShape> {
+    fn clone(&self) -> Self {
+        self.clone_box()
+    }
+}
+
+impl std::fmt::Debug for Box<dyn GridShape> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "GridShade {{ pos {:?}, points {:?} }}",
+            self.pos(),
+            self.iter().collect::<Vec<IVec2>>()
+        )
+    }
+}
+
+impl PartialEq for Box<dyn GridShape> {
+    fn eq(&self, other: &Self) -> bool {
+        self.pos() == other.pos() && self.iter().eq(other.iter())
     }
 }

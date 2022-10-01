@@ -153,4 +153,15 @@ mod tests {
         }
         canvas.print();
     }
+
+    #[test]
+    fn big() {
+        let rect = GridRect::new([16, 16], [30, 30]);
+        let mut canvas = Canvas::new([32, 32]);
+
+        for p in rect {
+            canvas.put(p, '*');
+        }
+        canvas.print();
+    }
 }

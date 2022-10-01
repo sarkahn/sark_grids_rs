@@ -49,23 +49,20 @@ impl GridShape for GridCircle {
 
 #[derive(Debug, Clone)]
 pub struct GridCircleIter {
-    iter: GridRectIter,
+    rect_iter: GridRectIter,
     center: Vec2,
     radius: f32,
-    bl: IVec2,
 }
 
 impl GridCircleIter {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
         let c = center.as_vec2() + Vec2::splat(0.5);
         let r = radius as f32;
-        let bl = IVec2::new((c.x - r).floor() as i32, (c.y - r).floor() as i32);
         let rect = GridRect::origin(UVec2::splat(radius as u32 * 2 + 1));
         GridCircleIter {
-            iter: rect.into_iter(),
+            rect_iter: rect.into_iter(),
             center: c,
             radius: r,
-            bl,
         }
     }
 }
@@ -74,10 +71,9 @@ impl Iterator for GridCircleIter {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
-        for p in self.iter.by_ref() {
-            let p = self.bl + p;
-            if inside_circle(self.center, p.as_vec2() + 0.5, self.radius + 0.5) {
-                return Some(p);
+        for p in self.rect_iter.by_ref() {
+            if inside_circle(p.as_vec2(), self.radius + 0.5) {
+                return Some(self.center.as_ivec2() + p);
             }
         }
 
@@ -86,9 +82,8 @@ impl Iterator for GridCircleIter {
 }
 
 #[inline]
-fn inside_circle(center: Vec2, point: Vec2, radius: f32) -> bool {
-    let d = center - point;
-    let dist_sq = d.x * d.x + d.y * d.y;
+fn inside_circle(p: Vec2, radius: f32) -> bool {
+    let dist_sq = p.x * p.x + p.y * p.y;
     dist_sq <= radius * radius
 }
 
@@ -215,21 +210,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn iter_outline() {
-        let size = 2;
-        let empty_circle = GridCircleOutline::new([8, 8], size);
-        let mut canvas = Canvas::new([50, 16]);
+    fn draw_circles() {
+        for size in 1..15 {
+            let x = size + 1;
+            let y = size + 1;
+            let empty_circle = GridCircleOutline::new([x, y], size);
+            let mut canvas = Canvas::new([size * 4 + 5, size * 2 + 3]);
 
-        for p in empty_circle {
-            canvas.put(p, '*');
+            for p in empty_circle {
+                canvas.put(p, '*');
+            }
+
+            let filled_circle = GridCircle::new([x + size * 2 + 2, y], size);
+
+            for p in filled_circle {
+                canvas.put(p, '*');
+            }
+
+            canvas.print();
+            println!();
         }
-
-        let filled_circle = GridCircle::new([30, 8], size);
-
-        for p in filled_circle {
-            canvas.put(p, '*');
-        }
-
-        canvas.print();
     }
 }
