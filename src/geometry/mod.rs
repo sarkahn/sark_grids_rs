@@ -17,6 +17,7 @@ pub use grid_circle::GridCircleOutline;
 pub use grid_line::GridLine;
 pub use grid_line::GridLineOrtho;
 pub use grid_rect::GridRect;
+pub use grid_cone::GridCone;
 
 pub trait GridShape: ShapeClone + Sync + Send + 'static {
     fn iter(&self) -> GridShapeIterator;
