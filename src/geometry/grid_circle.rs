@@ -1,6 +1,5 @@
-//! Utility for drawing circular shapes on a 2d grid.
+//! Utility for handling circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
-
 use glam::{IVec2, UVec2, Vec2};
 
 use crate::GridPoint;
@@ -10,8 +9,8 @@ use super::{grid_rect::GridRectIter, GridRect, GridShape};
 /// A filled circle. Points within the circle can be iterator over.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridCircle {
-    center: IVec2,
-    radius: usize,
+    pub center: IVec2,
+    pub radius: usize,
 }
 
 impl GridCircle {
@@ -27,9 +26,23 @@ impl GridCircle {
         Self::new([0, 0], radius)
     }
 
-    /// Create an outlined circle with this filled circles position and size.
+    /// Create an outlined circle with this circle's position and size.
     pub fn outline(&self) -> GridCircleOutline {
         GridCircleOutline::new(self.center, self.radius)
+    }
+
+    #[inline]
+    pub fn overlaps(&self, other: GridCircle) -> bool {
+        let a = (self.radius + other.radius) as i32;
+        let d = self.center - other.center;
+        a * a > (d.x * d.x + d.y * d.y)
+    }
+
+    #[inline]
+    pub fn contains(&self, p: impl GridPoint) -> bool {
+        let p = p.as_ivec2() - self.center;
+        let dist_sq = p.x * p.x + p.y * p.y;
+        dist_sq <= (self.radius * self.radius) as i32
     }
 }
 
@@ -56,7 +69,7 @@ pub struct GridCircleIter {
 
 impl GridCircleIter {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
-        let c = center.as_vec2() + Vec2::splat(0.5);
+        let c = center.as_vec2() + 0.5;
         let r = radius as f32;
         let rect = GridRect::origin(UVec2::splat(radius as u32 * 2 + 1));
         GridCircleIter {
@@ -210,6 +223,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore]
     fn draw_circles() {
         for size in 1..15 {
             let x = size + 1;

@@ -1,3 +1,5 @@
+//! Utility for handling cones/triangles on a 2d grid.
+
 use glam::IVec2;
 
 use crate::GridPoint;
@@ -34,6 +36,9 @@ impl GridCone {
     }
 
     /// Retrieve the 3 grid positions of the corners of the cone
+    ///
+    /// The first point is the position of the cone, and the
+    /// next two points are the two corners making up the cone triangle
     pub fn corners(&self) -> [IVec2; 3] {
         calc_triangle_points(self)
     }
@@ -41,7 +46,7 @@ impl GridCone {
 
 #[derive(Debug, Clone, Copy)]
 pub struct GridConeIter {
-    pub points: [IVec2; 3],
+    points: [IVec2; 3],
     min: IVec2,
     width: usize,
     curr: usize,

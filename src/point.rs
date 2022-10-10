@@ -38,43 +38,25 @@ pub trait GridPoint: Clone + Copy {
         }
     }
 
-    /// Returns the grid point above this one.
-    fn up(&self) -> IVec2 {
-        IVec2::new(self.x(), self.y() + 1)
-    }
-
     /// Returns the grid point the given number of spaces above this one.
-    fn up_by(&self, amount: i32) -> IVec2 {
+    fn up(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x(), self.y() + amount)
     }
 
-    /// Returns the grid point below this one.
-    fn down(&self) -> IVec2 {
-        IVec2::new(self.x(), self.y() - 1)
-    }
-
     /// Returns the grid point the given number of spaces below this one.
-    fn down_by(&self, amount: i32) -> IVec2 {
+    fn down(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x(), self.y() - amount)
     }
 
-    /// Returns the grid point to the right of this one.
-    fn right(&self) -> IVec2 {
-        IVec2::new(self.x() + 1, self.y())
-    }
-
-    /// Returns the grid point the given number of spaces to the right of this one.
-    fn right_by(&self, amount: i32) -> IVec2 {
+    /// Returns the grid point the given number of spaces to the right of 
+    /// this one.
+    fn right(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x() + amount, self.y())
     }
 
-    /// Returns the grid point to the left of this one.
-    fn left(&self) -> IVec2 {
-        IVec2::new(self.x() - 1, self.y())
-    }
-
-    /// Returns the grid point the given number of spaces to the left of this one.
-    fn left_by(&self, amount: i32) -> IVec2 {
+    /// Returns the grid point the given number of spaces to the left of 
+    /// this one.
+    fn left(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x() - amount, self.y())
     }
 
@@ -87,12 +69,18 @@ pub trait GridPoint: Clone + Copy {
     /// Retrieve the [`PivotedPoint`] with applied pivots, if any.
     fn get_pivot(self) -> PivotedPoint;
 
-    #[inline]
     /// The [taxicab distance](https://en.wikipedia.org/wiki/Taxicab_geometry)
     /// between two grid points.
+    #[inline]
     fn taxi_dist(self, other: impl GridPoint) -> usize {
-        let d = self.as_ivec2() - other.as_ivec2();
-        (d.x.abs() + d.y.abs()) as usize
+        let d = (self.as_ivec2() - other.as_ivec2()).abs();
+        (d.x + d.y) as usize
+    }
+
+    /// Linearly interpolate between points a and b by the amount t.
+    #[inline]
+    fn lerp(self, other: impl GridPoint, t: f32) -> IVec2 {
+        self.as_vec2().lerp(other.as_vec2(), t).as_ivec2()
     }
 }
 
@@ -184,7 +172,7 @@ impl_size2d!([u32; 2]);
 impl_size2d!([i32; 2]);
 impl_size2d!([usize; 2]);
 
-/// A trait for types representing arbitrary 2d point.
+/// A trait for types representing an arbitrary 2d point.
 pub trait Point2d {
     fn x(&self) -> f32;
     fn y(&self) -> f32;

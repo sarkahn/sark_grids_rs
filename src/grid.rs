@@ -23,21 +23,34 @@
 //! assert_eq!("hello", hello);
 //! ```
 
-use std::ops::{Bound, Index, IndexMut, RangeBounds};
+use std::ops::{Bound, Index, IndexMut, RangeBounds, Sub};
 
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{point::Point2d, GridPoint, Pivot, Size2d};
+use crate::{geometry::GridRect, GridPoint, Pivot, Size2d};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
-///
-/// This grid assumes that `[0,0]` refers to the bottom-left most tile, and
-/// `[width -1, height -1]` refers to the top-right-most tile.
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Grid<T: Clone> {
     data: Vec<T>,
     size: UVec2,
+    /// Pivot for the grid, determines how the grid indexes 2d coordinates.
+    /// Accessing the grid via 2d index is done from the perspective of the
+    /// pivot.
+    pivot: Pivot,
+    pivot_offset: Vec2,
+}
+
+impl<T: Clone> Default for Grid<T> {
+    fn default() -> Self {
+        Self {
+            data: Default::default(),
+            size: Default::default(),
+            pivot: Pivot::BottomLeft,
+            pivot_offset: Vec2::ZERO,
+        }
+    }
 }
 
 impl<T: Clone> Grid<T> {
@@ -49,7 +62,33 @@ impl<T: Clone> Grid<T> {
         Self {
             data: vec![value; len],
             size,
+            ..Default::default()
         }
+    }
+
+    /// Sets the pivot point for the grid. For indexing with 2d coordinates the
+    /// "origin" of the grid always sits on the pivot. IE for a center pivot
+    /// 3x3 grid:
+    ///   
+    /// ```ignore
+    /// [-1, 1] | [ 0, 1] | [ 1, 1]
+    /// [-1, 0] | *[0,0]* | [ 1, 0]
+    /// [-1,-1] | [ 0,-1] | [ 1,-1]
+    /// ```
+    ///
+    /// The `transform_ltw` and `transform_wtl` functions can be used to
+    /// transform between world space and grid local space.
+    ///
+    /// Note that 1d indices ignore the pivot and are used to directly index
+    /// the underlying vec.
+    pub fn with_pivot(mut self, pivot: Pivot) -> Self {
+        self.set_pivot(pivot);
+        self
+    }
+
+    pub fn set_pivot(&mut self, pivot: Pivot) {
+        self.pivot = pivot;
+        self.pivot_offset = self.size.as_vec2().sub(1.0) * Vec2::from(pivot);
     }
 
     /// Creates a new [Grid<T>] with all elements initialized to default values.
@@ -71,7 +110,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Will insert up to the length of a row.
     pub fn insert_row_at(&mut self, xy: impl GridPoint, row: impl Iterator<Item = T>) {
-        let [x, y] = xy.as_array();
+        let [x, y] = self.transform_ltw(xy).to_array();
         let iter = self.iter_row_mut(y as usize).skip(x as usize);
         for (v, input) in iter.zip(row) {
             *v = input;
@@ -89,7 +128,7 @@ impl<T: Clone> Grid<T> {
     ///
     /// Will insert up to the height of a column.
     pub fn insert_column_at(&mut self, xy: impl GridPoint, column: impl IntoIterator<Item = T>) {
-        let [x, y] = xy.as_array();
+        let [x, y] = self.transform_ltw(xy).to_array();
         let iter = self.iter_column_mut(x as usize).skip(y as usize);
         for (v, input) in iter.zip(column) {
             *v = input;
@@ -114,10 +153,11 @@ impl<T: Clone> Grid<T> {
         self.data.len()
     }
 
-    /// Converts a 2d grid position to it's corresponding 1D index.
+    /// Converts a 2d grid position to it's corresponding 1D index. The given
+    /// point must be relative to the grid's pivot point.
     #[inline(always)]
     pub fn pos_to_index(&self, pos: impl GridPoint) -> usize {
-        let [x, y] = pos.as_array();
+        let [x, y] = self.transform_ltw(pos).to_array();
         y as usize * self.width() + x as usize
     }
 
@@ -128,30 +168,32 @@ impl<T: Clone> Grid<T> {
         let w = self.width() as i32;
         let x = index % w;
         let y = index / w;
-        IVec2::new(x, y)
-    }
-
-    /// Convert a 2d grid position to it's equivalent world position.
-    pub fn grid_to_world(&self, p: impl GridPoint) -> IVec2 {
-        p.as_ivec2() - self.size.as_ivec2() / 2
-    }
-
-    /// Convert from a 2d world position to it's grid position.
-    pub fn world_to_grid(&self, p: impl Point2d) -> IVec2 {
-        p.as_vec2().floor().as_ivec2() + self.size.as_ivec2() / 2
+        self.transform_wtl(IVec2::new(x, y))
     }
 
     /// Get the position of the given pivot point on the grid.
     pub fn pivot_position(&self, pivot: Pivot) -> IVec2 {
-        let size = self.size().as_vec2() - Vec2::ONE;
-        let pivot = Vec2::from(pivot);
-        (size * pivot).floor().as_ivec2()
+        (Vec2::from(pivot) * self.size().sub(1).as_vec2()).as_ivec2()
+    }
+
+    /// Converts a grid point from local space with respective to the grid's
+    /// pivot into world space.
+    #[inline(always)]
+    pub fn transform_ltw(&self, xy: impl GridPoint) -> IVec2 {
+        (xy.as_vec2() + self.pivot_offset).as_ivec2()
+    }
+
+    /// Converts a grid point from world space into local space with respect
+    /// to the grid's pivot.
+    #[inline]
+    pub fn transform_wtl(&self, xy: impl GridPoint) -> IVec2 {
+        (xy.as_vec2() - self.pivot_offset).as_ivec2()
     }
 
     #[inline]
     pub fn in_bounds(&self, pos: impl GridPoint) -> bool {
-        let pos = pos.as_ivec2();
-        pos.cmpge(IVec2::ZERO).all() && pos.cmplt(self.size().as_ivec2()).all()
+        let bounds = self.bounds();
+        bounds.contains(pos)
     }
 
     /// Gets the index for a given side.
@@ -197,7 +239,7 @@ impl<T: Clone> Grid<T> {
 
     /// A mutable iterator over a single row of the grid.
     ///
-    /// Goes from left to right.
+    /// Iterates from left to right.
     #[inline]
     pub fn iter_row_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut T> {
         let w = self.width() as usize;
@@ -240,8 +282,9 @@ impl<T: Clone> Grid<T> {
     /// Goes from bottom to top.
     #[inline]
     pub fn iter_column(&self, x: usize) -> impl DoubleEndedIterator<Item = &T> {
+        let x = self.transform_ltw([x, 0]).x as usize;
         let w = self.width() as usize;
-        return self.data[x..].iter().step_by(w);
+        return self.data[x as usize..].iter().step_by(w);
     }
 
     /// A mutable iterator over a single column of the grid.
@@ -249,6 +292,7 @@ impl<T: Clone> Grid<T> {
     /// Goes from bottom to top.
     #[inline]
     pub fn iter_column_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut T> {
+        let x = self.transform_ltw([x, 0]).x as usize;
         let w = self.width() as usize;
         return self.data[x..].iter_mut().step_by(w);
     }
@@ -281,7 +325,7 @@ impl<T: Clone> Grid<T> {
     pub fn iter_2d(&self) -> impl Iterator<Item = (IVec2, &T)> {
         (0..self.height())
             .cartesian_product(0..self.width())
-            .map(|(y, x)| IVec2::new(x as i32, y as i32))
+            .map(|(y, x)| self.transform_wtl([x as i32, y as i32]))
             .zip(self.data.iter())
     }
 
@@ -289,9 +333,10 @@ impl<T: Clone> Grid<T> {
     ///
     /// Yields `(IVec2, &mut T)`, where `IVec2` is the corresponding position of the value in the grid.
     pub fn iter_2d_mut(&mut self) -> impl Iterator<Item = (IVec2, &mut T)> {
+        let offset = self.pivot_offset;
         (0..self.height())
             .cartesian_product(0..self.width())
-            .map(|(y, x)| IVec2::new(x as i32, y as i32))
+            .map(move |(y, x)| (Vec2::from([x as f32, y as f32]) - offset).as_ivec2())
             .zip(self.data.iter_mut())
     }
 
@@ -321,6 +366,11 @@ impl<T: Clone> Grid<T> {
         };
 
         [start, end]
+    }
+
+    pub fn bounds(&self) -> GridRect {
+        let center = Vec2::splat(0.5).sub(Vec2::from(self.pivot)) * self.size.as_vec2();
+        GridRect::new(center.as_ivec2(), self.size)
     }
 }
 
@@ -548,5 +598,82 @@ mod tests {
         let hello: String = grid.iter_row(3).take(5).collect();
 
         assert_eq!(hello, "Hello");
+    }
+
+    #[test]
+    fn pivot_tl() {
+        let mut grid = Grid::default([3, 3]).with_pivot(Pivot::TopLeft);
+        grid[[0, 0]] = 1;
+        grid[[1, -1]] = 2;
+
+        assert_eq!(2, grid[[1, -1]]);
+    }
+
+    #[test]
+    fn pivot_tr() {
+        let mut grid = Grid::default([3, 3]).with_pivot(Pivot::TopRight);
+        grid[[-1, -1]] = 10;
+        assert_eq!(10, grid[[-1, -1]]);
+        assert_eq!([0, 0], grid.transform_ltw([-2, -2]).to_array());
+        assert_eq!([2, 2], grid.transform_ltw([0, 0]).to_array());
+        assert_eq!([-2, -2], grid.transform_wtl([0, 0]).to_array());
+    }
+
+    #[test]
+    fn pivot_center() {
+        let mut grid = Grid::default([3, 3]).with_pivot(Pivot::Center);
+        grid[[-1, -1]] = 10;
+        assert_eq!(10, grid[[-1, -1]]);
+        assert_eq!([2, 2], grid.transform_ltw([1, 1]).to_array());
+        assert_eq!([0, 0], grid.transform_ltw([-1, -1]).to_array());
+        assert_eq!([-1, -1], grid.transform_wtl([0, 0]).to_array());
+        assert_eq!([1, 1], grid.transform_ltw([0, 0]).to_array());
+
+        let mut grid = Grid::default([4, 4]).with_pivot(Pivot::Center);
+        grid[[-1, -1]] = 10;
+        assert_eq!(10, grid[[-1, -1]]);
+        assert_eq!([2, 2], grid.transform_ltw([1, 1]).to_array());
+        assert_eq!([4, 4], grid.transform_ltw([3, 3]).to_array());
+        // Center pos is rounded DOWN for even grids
+        assert_eq!([1, 1], grid.transform_ltw([0, 0]).to_array());
+        assert_eq!([-1, -1], grid.transform_wtl([0, 0]).to_array());
+    }
+
+    #[test]
+    fn index_to_pos() {
+        let mut grid = Grid::default([3, 3]).with_pivot(Pivot::Center);
+        grid[[-1, -1]] = 10;
+
+        assert_eq!([-1, -1], grid.index_to_pos(0).to_array());
+    }
+
+    #[test]
+    fn bounds() {
+        // let grid = Grid::<i32>::default([3,3]).with_pivot(Pivot::TopRight);
+        // assert_eq!([-3,-3], grid.bounds().min_i().to_array());
+        // assert_eq!([-1,-1], grid.bounds().max_i().to_array());
+
+        // let grid = Grid::<i32>::default([3,3]).with_pivot(Pivot::BottomRight);
+        // assert_eq!([-3,0], grid.bounds().min_i().to_array());
+        // assert_eq!([-1,2], grid.bounds().max_i().to_array());
+
+        // let grid = Grid::<i32>::default([3,3]).with_pivot(Pivot::BottomLeft);
+        // assert_eq!([0,0], grid.bounds().min_i().to_array());
+        // assert_eq!([2,2], grid.bounds().max_i().to_array());
+        
+        // let grid = Grid::<i32>::default([3,3]).with_pivot(Pivot::TopLeft);
+        // assert_eq!([0,-3], grid.bounds().min_i().to_array());
+        // assert_eq!([2,-1], grid.bounds().max_i().to_array());
+        
+
+        let grid = Grid::<i32>::default([4,4]).with_pivot(Pivot::BottomLeft);
+        assert_eq!([0,0], grid.bounds().min_i().to_array());
+        assert_eq!([3,3], grid.bounds().max_i().to_array());
+
+        let grid = Grid::<i32>::default([4,4]).with_pivot(Pivot::TopLeft);
+        assert_eq!([2,-2], grid.bounds().center.to_array());
+        assert_eq!([0,-4], grid.bounds().min_i().to_array());
+        assert_eq!([3,-1], grid.bounds().max_i().to_array());
+
     }
 }

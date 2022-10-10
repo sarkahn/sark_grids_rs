@@ -1,6 +1,8 @@
-//! Utility for drawing lines on a 2d grid.
+//! Utility for handlines lines on a 2d grid.
+use std::ops::Sub;
+
 // https://www.redblobgames.com/grids/line-drawing.html
-use glam::{IVec2, Vec2};
+use glam::IVec2;
 
 use crate::GridPoint;
 
@@ -9,8 +11,8 @@ use super::GridShape;
 /// A line of points on a grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridLine {
-    start: IVec2,
-    end: IVec2,
+    pub start: IVec2,
+    pub end: IVec2,
 }
 
 impl GridLine {
@@ -26,6 +28,11 @@ impl GridLine {
     /// Create a line with the start point at 0,0
     pub fn origin(end: impl GridPoint) -> Self {
         Self::new([0, 0], end)
+    }
+
+    #[inline]
+    pub fn length(&self) -> usize {
+        self.end.as_vec2().sub(self.start.as_vec2()).length() as usize
     }
 }
 
@@ -91,19 +98,11 @@ impl IntoIterator for GridLine {
 }
 
 #[inline]
-fn lerp(start: f32, end: f32, t: f32) -> f32 {
-    start + (t * (end - start))
-}
-
-#[inline]
 fn lerp_pos(p1: IVec2, p2: IVec2, t: f32) -> IVec2 {
     let p1 = p1.as_vec2();
     let p2 = p2.as_vec2();
 
-    let x = lerp(p1.x, p2.x, t);
-    let y = lerp(p1.y, p2.y, t);
-
-    Vec2::new(x, y).round().as_ivec2()
+    p1.lerp(p2, t).round().as_ivec2()
 }
 
 #[inline]
@@ -181,6 +180,8 @@ impl GridLineOrthoIter {
         }
     }
 }
+
+#[inline]
 fn next_dir(i: IVec2, n: IVec2, sign: IVec2) -> IVec2 {
     let i = i.as_vec2();
     let n = n.as_vec2();
@@ -227,6 +228,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[ignore]
     fn line() {
         let mut canvas = Canvas::new([11, 7]);
         let lines = [
@@ -242,6 +244,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn line_orthogonal() {
         let mut canvas = Canvas::new([20, 20]);
         let lines = [
