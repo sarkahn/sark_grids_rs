@@ -1,8 +1,11 @@
 //! Traits for more easily dealing with the various types to represent 2d points/sizes
-
 use glam::{IVec2, UVec2, Vec2};
 
-use crate::{pivot::PivotedPoint, Pivot};
+use crate::{
+    directions::{DIR_4, DIR_8},
+    pivot::PivotedPoint,
+    Pivot,
+};
 
 /// A trait for types representing an integer point on a 2d grid.
 pub trait GridPoint: Clone + Copy {
@@ -48,26 +51,31 @@ pub trait GridPoint: Clone + Copy {
         IVec2::new(self.x(), self.y() - amount)
     }
 
-    /// Returns the grid point the given number of spaces to the right of 
+    /// Returns the grid point the given number of spaces to the right of
     /// this one.
     fn right(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x() + amount, self.y())
     }
 
-    /// Returns the grid point the given number of spaces to the left of 
+    /// Returns the grid point the given number of spaces to the left of
     /// this one.
     fn left(&self, amount: i32) -> IVec2 {
         IVec2::new(self.x() - amount, self.y())
+    }
+
+    /// Returns the grid point offset by the given amount.
+    fn offset(&self, xy: impl GridPoint) -> IVec2 {
+        self.as_ivec2() + xy.as_ivec2()
     }
 
     /// Retrieve the pivot-aligned point on the grid.
     ///
     /// If no pivot has been applied this will simply return the point
     /// directly.
-    fn get_aligned_point(&self, size: impl Size2d) -> IVec2;
+    //fn get_aligned_point(&self, size: impl Size2d) -> IVec2;
 
     /// Retrieve the [`PivotedPoint`] with applied pivots, if any.
-    fn get_pivot(self) -> PivotedPoint;
+    fn get_pivot(self) -> Option<Pivot>;
 
     /// The [taxicab distance](https://en.wikipedia.org/wiki/Taxicab_geometry)
     /// between two grid points.
@@ -82,6 +90,47 @@ pub trait GridPoint: Clone + Copy {
     fn lerp(self, other: impl GridPoint, t: f32) -> IVec2 {
         self.as_vec2().lerp(other.as_vec2(), t).as_ivec2()
     }
+
+    /// Returns an iterator over the 8 points adjacent to this one.
+    #[inline]
+    fn adj_8(&self) -> AdjIterator {
+        AdjIterator {
+            i: 0,
+            p: self.as_ivec2(),
+            arr: DIR_8,
+        }
+    }
+
+    /// Returns an iterator over the 4 points adjacent to this one.
+    #[inline]
+    fn adj_4(&self) -> AdjIterator {
+        AdjIterator {
+            i: 0,
+            p: self.as_ivec2(),
+            arr: DIR_4,
+        }
+    }
+}
+
+pub struct AdjIterator<'a> {
+    i: usize,
+    p: IVec2,
+    arr: &'a [IVec2],
+}
+
+impl<'a> Iterator for AdjIterator<'a> {
+    type Item = IVec2;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.i >= self.arr.len() {
+            return None;
+        };
+
+        let p = self.p + self.arr[self.i];
+        self.i += 1;
+
+        Some(p)
+    }
 }
 
 macro_rules! impl_grid_point {
@@ -95,16 +144,8 @@ macro_rules! impl_grid_point {
                 self[1] as i32
             }
 
-            // Returns the point directly - no pivot has been applied.
-            fn get_aligned_point(&self, _size: impl Size2d) -> IVec2 {
-                IVec2::new(self[0] as i32, self[1] as i32)
-            }
-
-            fn get_pivot(self) -> PivotedPoint {
-                PivotedPoint {
-                    pivot: Pivot::BottomLeft,
-                    point: IVec2::new(self[0] as i32, self[1] as i32),
-                }
+            fn get_pivot(self) -> Option<Pivot> {
+                None
             }
         }
     };
@@ -219,6 +260,8 @@ impl_point2d!([usize; 2]);
 
 #[cfg(test)]
 mod tests {
+    use glam::IVec2;
+
     use crate::GridPoint;
 
     #[test]
@@ -228,5 +271,24 @@ mod tests {
 
         let dist = GridPoint::taxi_dist(a, b);
         assert_eq!(dist, 20);
+    }
+
+    #[test]
+    fn adj() {
+        let points: Vec<IVec2> = [10, 10].adj_4().collect();
+        assert!(points.contains(&IVec2::new(10, 9)));
+        assert!(points.contains(&IVec2::new(9, 10)));
+        assert!(points.contains(&IVec2::new(11, 10)));
+        assert!(points.contains(&IVec2::new(10, 11)));
+
+        let points: Vec<IVec2> = [10, 10].adj_8().collect();
+        assert!(points.contains(&IVec2::new(10, 9)));
+        assert!(points.contains(&IVec2::new(9, 10)));
+        assert!(points.contains(&IVec2::new(11, 10)));
+        assert!(points.contains(&IVec2::new(10, 11)));
+        assert!(points.contains(&IVec2::new(11, 11)));
+        assert!(points.contains(&IVec2::new(9, 9)));
+        assert!(points.contains(&IVec2::new(11, 9)));
+        assert!(points.contains(&IVec2::new(9, 11)));
     }
 }

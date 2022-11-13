@@ -6,7 +6,7 @@ use glam::IVec2;
 
 use crate::GridPoint;
 
-use super::GridShape;
+use super::{GridRect, GridShape};
 
 /// A line of points on a grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
@@ -49,6 +49,12 @@ impl GridShape for GridLine {
         let v = self.end - self.start;
         self.start = pos;
         self.end = self.start + v;
+    }
+
+    fn bounds(&self) -> super::GridRect {
+        let min = self.start.min(self.end);
+        let max = self.start.max(self.end);
+        GridRect::from_points(min, max)
     }
 }
 
@@ -151,6 +157,12 @@ impl GridShape for GridLineOrtho {
         let v = self.end - self.start;
         self.start = pos;
         self.end = self.start + v;
+    }
+
+    fn bounds(&self) -> super::GridRect {
+        let min = self.start.min(self.end);
+        let max = self.start.max(self.end);
+        GridRect::from_points(min, max)
     }
 }
 

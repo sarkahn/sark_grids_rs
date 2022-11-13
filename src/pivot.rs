@@ -1,3 +1,5 @@
+use std::ops::{Mul, Sub};
+
 use glam::{IVec2, Vec2};
 
 use crate::{GridPoint, Size2d};
@@ -18,7 +20,8 @@ pub enum Pivot {
 }
 
 impl Pivot {
-    /// Coordinate axis for adjusting an aligned position on a 2d rect.
+    /// Coordinate axis for each pivot, used when transforming a point into
+    /// the pivot's coordinate space
     pub fn axis(&self) -> IVec2 {
         match self {
             Pivot::TopLeft => IVec2::new(1, -1),
@@ -29,14 +32,18 @@ impl Pivot {
         }
     }
 
-    #[inline]
-    /// Transform a point to it's equivalent from the perspective of
-    /// this pivot.
-    pub fn pivot_aligned_point(&self, point: impl GridPoint, size: impl Size2d) -> IVec2 {
-        let axis = Vec2::from(*self);
-        let align = (size.as_vec2() - Vec2::ONE) * axis;
+    // #[inline]
+    // fn transform_point(&self, point: impl GridPoint) -> IVec2 {
+    //     point.as_ivec2() * self.axis()
+    // }
 
-        point.as_ivec2() * self.axis() + align.as_ivec2()
+    /// Transform a point to it's equivalent position from the perspective
+    /// of this pivot
+    #[inline]
+    pub fn transform_point(&self, point: impl GridPoint, size: impl Size2d) -> IVec2 {
+        let origin = size.as_vec2().sub(1.0).mul(Vec2::from(*self));
+        let point = point.as_ivec2() * self.axis();
+        origin.round().as_ivec2() + point
     }
 }
 
@@ -59,17 +66,6 @@ pub struct PivotedPoint {
     pub pivot: Pivot,
 }
 
-impl PivotedPoint {
-    /// Returns the point from the perspective of the pivot.
-    pub fn pivot_point(&self) -> IVec2 {
-        self.point
-    }
-
-    pub fn pivot(&self) -> Pivot {
-        self.pivot
-    }
-}
-
 impl GridPoint for PivotedPoint {
     #[inline]
     fn x(&self) -> i32 {
@@ -81,14 +77,18 @@ impl GridPoint for PivotedPoint {
         self.point.y
     }
 
-    /// Retrieve the pivot aligned point.
-    #[inline]
-    fn get_aligned_point(&self, size: impl Size2d) -> IVec2 {
-        self.pivot.pivot_aligned_point(self.point, size)
-    }
+    // /// Retrieve the pivot aligned point.
+    // #[inline]
+    // fn get_aligned_point(&self, size: impl Size2d) -> IVec2 {
+    //     if let Some(pivot) = self.pivot {
+    //         todo!()
+    //     } else {
+    //         self.point
+    //     }
+    // }
 
-    fn get_pivot(self) -> PivotedPoint {
-        self
+    fn get_pivot(self) -> Option<Pivot> {
+        Some(self.pivot)
     }
 }
 
@@ -96,12 +96,25 @@ impl GridPoint for PivotedPoint {
 mod tests {
     use super::*;
 
-    #[test]
-    fn pivot_point() {
-        let p = [0, 0].pivot(Pivot::TopRight);
-        assert_eq!([9, 9], p.get_aligned_point([10, 10]).to_array());
+    // #[test]
+    // fn pivot_point() {
+    //     let p = [0, 0].pivot(Pivot::TopRight);
+    //     assert_eq!([9, 9], p.get_aligned_point([10, 10]).to_array());
 
-        let p = [3, 3].pivot(Pivot::TopLeft);
-        assert_eq!([3, 6], p.get_aligned_point([10, 10]).to_array());
+    //     let p = [3, 3].pivot(Pivot::TopLeft);
+    //     assert_eq!([3, 6], p.get_aligned_point([10, 10]).to_array());
+    // }
+
+    #[test]
+    fn transform_point() {
+        let pivot = Pivot::TopRight;
+        assert_eq!([8, 8], pivot.transform_point([1, 1], [10, 10]).to_array());
+        assert_eq!([9, 9], pivot.transform_point([0, 0], [10, 10]).to_array());
+        let pivot = Pivot::TopLeft;
+        assert_eq!([1, 8], pivot.transform_point([1, 1], [10, 10]).to_array());
+        let pivot = Pivot::BottomLeft;
+        assert_eq!([1, 1], pivot.transform_point([1, 1], [10, 10]).to_array());
+        let pivot = Pivot::BottomRight;
+        assert_eq!([8, 1], pivot.transform_point([1, 1], [10, 10]).to_array());
     }
 }

@@ -58,6 +58,11 @@ impl GridShape for GridCircle {
     fn set_pos(&mut self, pos: IVec2) {
         self.center = pos;
     }
+
+    fn bounds(&self) -> GridRect {
+        let r = self.radius * 2;
+        GridRect::new(self.center, [r, r])
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -156,6 +161,11 @@ impl GridShape for GridCircleOutline {
 
     fn set_pos(&mut self, pos: IVec2) {
         self.center = pos;
+    }
+
+    fn bounds(&self) -> GridRect {
+        let r = self.radius * 2;
+        GridRect::new(self.center, [r, r])
     }
 }
 

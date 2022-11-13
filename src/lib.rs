@@ -8,6 +8,7 @@ pub mod sparse_grid;
 pub mod util;
 pub mod world_grid;
 
+pub use directions::{DIR_4, DIR_8};
 pub use grid::Grid;
 pub use pivot::Pivot;
 pub use pivot::PivotedPoint;

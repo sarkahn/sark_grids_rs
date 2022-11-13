@@ -4,7 +4,7 @@ use glam::IVec2;
 
 use crate::GridPoint;
 
-use super::{GridShape, GridShapeIterator};
+use super::{GridRect, GridShape, GridShapeIterator};
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct GridCone {
@@ -85,6 +85,17 @@ impl GridShape for GridCone {
 
     fn set_pos(&mut self, pos: IVec2) {
         self.pos = pos;
+    }
+
+    fn bounds(&self) -> GridRect {
+        let min = self
+            .corners()
+            .into_iter()
+            .reduce(|a, b| a.min(b))
+            .expect("Error getting corners from grid cone");
+        let max = self.corners().into_iter().reduce(|a, b| a.max(b)).unwrap();
+
+        GridRect::from_points(min, max)
     }
 }
 

@@ -23,6 +23,8 @@ pub trait GridShape: ShapeClone + Sync + Send + 'static {
     fn iter(&self) -> GridShapeIterator;
     fn pos(&self) -> IVec2;
     fn set_pos(&mut self, pos: IVec2);
+    /// Get a rect encompassing the entire shape
+    fn bounds(&self) -> GridRect;
 }
 
 #[derive(Debug, Clone)]

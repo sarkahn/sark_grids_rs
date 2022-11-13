@@ -12,10 +12,10 @@ pub const UP_RIGHT: IVec2 = IVec2::from_array([1, 1]);
 pub const DOWN_LEFT: IVec2 = IVec2::from_array([-1, -1]);
 pub const DOWN_RIGHT: IVec2 = IVec2::from_array([1, -1]);
 
-/// Array of the four orthogonal grid directions.
+/// Array of four orthogonal grid directions.
 pub const DIR_4: &[IVec2] = &[UP, DOWN, LEFT, RIGHT];
 
-/// Array of eight grid directions.
+/// Array of eight adjacent grid directions.
 pub const DIR_8: &[IVec2] = &[
     UP, DOWN, LEFT, RIGHT, UP_LEFT, UP_RIGHT, DOWN_LEFT, DOWN_RIGHT,
 ];
