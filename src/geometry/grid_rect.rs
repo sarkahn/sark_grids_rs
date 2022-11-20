@@ -6,7 +6,7 @@ use std::{
 
 use glam::{IVec2, Mat2, Vec2};
 
-use crate::{GridPoint, Pivot, Size2d};
+use crate::{GridPoint, Pivot};
 
 use super::GridShape;
 
@@ -37,7 +37,7 @@ impl Display for GridRect {
 }
 
 impl GridRect {
-    pub fn new(center: impl GridPoint, size: impl Size2d) -> GridRect {
+    pub fn new(center: impl GridPoint, size: impl GridPoint) -> GridRect {
         GridRect {
             center: center.as_ivec2(),
             size: size.as_ivec2(),
@@ -46,7 +46,7 @@ impl GridRect {
     }
 
     /// Create a grid rect with it's center set to 0,0
-    pub fn origin(size: impl Size2d) -> Self {
+    pub fn origin(size: impl GridPoint) -> Self {
         Self::new([0, 0], size)
     }
 
@@ -72,7 +72,7 @@ impl GridRect {
     }
 
     /// Create a rect with the bottom left corner at the given position.
-    pub fn from_bl(pos: impl GridPoint, size: impl Size2d) -> GridRect {
+    pub fn from_bl(pos: impl GridPoint, size: impl GridPoint) -> GridRect {
         GridRect::from_points(pos, pos.as_ivec2() + (size.as_ivec2() - 1))
     }
 
@@ -125,7 +125,7 @@ impl GridRect {
     /// Return a rect with the same center but resized by the given amount
     /// on each axis
     pub fn resized(&self, amount: impl GridPoint) -> GridRect {
-        let size = (self.size + amount.as_ivec2()).max(IVec2::ONE).as_uvec2();
+        let size = (self.size + amount.as_ivec2()).max(IVec2::ONE).as_ivec2();
         GridRect::new(self.center, size)
     }
 
@@ -147,6 +147,14 @@ impl GridRect {
     pub fn contains(&self, p: impl GridPoint) -> bool {
         let p = p.as_ivec2();
         !(p.cmplt(self.min_i()).any() || p.cmpgt(self.max_i()).any())
+    }
+
+    /// Returns true if the given rect is entirely contained within this one.
+    #[inline]
+    pub fn contains_rect(&self, rect: GridRect) -> bool {
+        let [amin, amax] = self.min_max_i();
+        let [bmin, bmax] = rect.min_max_i();
+        bmin.cmpge(amin).all() && bmax.cmple(amax).all()
     }
 
     /// Check if any part of a rect overlaps another
@@ -266,7 +274,7 @@ pub struct GridRectIter {
 }
 
 impl GridRectIter {
-    pub fn new(center: impl GridPoint, size: impl Size2d) -> Self {
+    pub fn new(center: impl GridPoint, size: impl GridPoint) -> Self {
         let size = size.as_ivec2();
         GridRectIter {
             origin: center.as_ivec2() - size / 2,
