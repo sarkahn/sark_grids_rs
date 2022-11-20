@@ -26,16 +26,16 @@
 
 use std::ops::{Bound, Index, IndexMut, RangeBounds, Sub};
 
-use glam::{IVec2, UVec2, Vec2};
+use glam::{IVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{geometry::GridRect, GridPoint, Pivot, Size2d};
+use crate::{geometry::GridRect, GridPoint, Pivot};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Grid<T: Clone> {
+pub struct Grid<T> {
     data: Vec<T>,
-    size: UVec2,
+    size: IVec2,
 }
 
 impl<T: Clone> Default for Grid<T> {
@@ -43,17 +43,14 @@ impl<T: Clone> Default for Grid<T> {
         Self {
             data: Default::default(),
             size: Default::default(),
-            //origin: Default::default(),
-            //pivot: Pivot::BottomLeft,
-            // pivot_offset: Vec2::ZERO,
         }
     }
 }
 
 impl<T: Clone> Grid<T> {
     /// Creates a new [Grid<T>] with the given default value set for all elements.
-    pub fn new(value: T, size: impl Size2d) -> Self {
-        let size = size.as_uvec2();
+    pub fn new(value: T, size: impl GridPoint) -> Self {
+        let size = size.as_ivec2();
         let len = (size.x * size.y) as usize;
 
         Self {
@@ -95,7 +92,7 @@ impl<T: Clone> Grid<T> {
     // }
 
     /// Creates a new [Grid<T>] with all elements initialized to default values.
-    pub fn default(size: impl Size2d) -> Self
+    pub fn default(size: impl GridPoint) -> Self
     where
         T: Default,
     {
@@ -146,7 +143,7 @@ impl<T: Clone> Grid<T> {
         self.size.y as usize
     }
 
-    pub fn size(&self) -> UVec2 {
+    pub fn size(&self) -> IVec2 {
         self.size
     }
 
@@ -163,15 +160,16 @@ impl<T: Clone> Grid<T> {
         p.round().as_ivec2()
     }
 
-    // #[inline(always)]
-    // pub fn transform_ltw(&self, xy: impl GridPoint) -> IVec2 {
-    //     self.pivot.transform_i2dtw(xy, self.size)
-    // }
-
-    // #[inline]
-    // pub fn transform_wtl(&self, xy: impl GridPoint) -> IVec2 {
-    //     self.pivot.transform_wti2d(xy, self.size)
-    // }
+    /// Try to retrieve the value at the given position.
+    ///
+    /// Returns None if the position is out of bounds.
+    #[inline]
+    pub fn get(&self, xy: impl GridPoint) -> Option<&T> {
+        if !self.in_bounds(xy) {
+            return None;
+        }
+        Some(&self[xy])
+    }
 
     #[inline]
     pub fn in_bounds(&self, pos: impl GridPoint) -> bool {
@@ -192,8 +190,8 @@ impl<T: Clone> Grid<T> {
     // Size of the grid along a given axis, where 0 == x and 1 == y
     pub fn axis_size(&self, axis: usize) -> usize {
         match axis {
-            0 => self.width() as usize,
-            1 => self.height() as usize,
+            0 => self.width(),
+            1 => self.height(),
             _ => panic!("Invalid grid axis {}", axis),
         }
     }
@@ -215,7 +213,7 @@ impl<T: Clone> Grid<T> {
     /// Goes from left to right.
     #[inline]
     pub fn iter_row(&self, y: usize) -> impl DoubleEndedIterator<Item = &T> {
-        let w = self.width() as usize;
+        let w = self.width();
         let i = y * w;
         self.data[i..i + w].iter()
     }
@@ -225,7 +223,7 @@ impl<T: Clone> Grid<T> {
     /// Iterates from left to right.
     #[inline]
     pub fn iter_row_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-        let w = self.width() as usize;
+        let w = self.width();
         let i = y * w;
         self.data[i..i + w].iter_mut()
     }
@@ -238,7 +236,7 @@ impl<T: Clone> Grid<T> {
         range: impl RangeBounds<usize>,
     ) -> impl DoubleEndedIterator<Item = &[T]> {
         let [start, end] = self.range_to_start_end(range, 1);
-        let width = self.width() as usize;
+        let width = self.width();
         let x = start * width;
         let count = end.saturating_sub(start) + 1;
         let chunks = self.data[x..].chunks(width);
@@ -253,7 +251,7 @@ impl<T: Clone> Grid<T> {
         range: impl RangeBounds<usize>,
     ) -> impl DoubleEndedIterator<Item = &mut [T]> {
         let [start, end] = self.range_to_start_end(range, 1);
-        let width = self.width() as usize;
+        let width = self.width();
         let x = start * width;
         let count = end - start + 1;
         let chunks = self.data[x..].chunks_mut(width);
@@ -265,8 +263,8 @@ impl<T: Clone> Grid<T> {
     /// Goes from bottom to top.
     #[inline]
     pub fn iter_column(&self, x: usize) -> impl DoubleEndedIterator<Item = &T> {
-        let w = self.width() as usize;
-        return self.data[x as usize..].iter().step_by(w);
+        let w = self.width();
+        return self.data[x..].iter().step_by(w);
     }
 
     /// A mutable iterator over a single column of the grid.
@@ -274,7 +272,7 @@ impl<T: Clone> Grid<T> {
     /// Goes from bottom to top.
     #[inline]
     pub fn iter_column_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-        let w = self.width() as usize;
+        let w = self.width();
         return self.data[x..].iter_mut().step_by(w);
     }
 
@@ -349,10 +347,10 @@ impl<T: Clone> Grid<T> {
         [start, end]
     }
 
-    /// Returns the bounds of the grid, accounting for the grid's [Pivot].
+    /// Returns the bounds of the grid.
     #[inline]
     pub fn bounds(&self) -> GridRect {
-        GridRect::from_points([0, 0], self.size.as_ivec2().sub(1))
+        GridRect::from_bl([0, 0], self.size)
     }
 
     /// Converts a 2d grid position to it's corresponding 1D index.

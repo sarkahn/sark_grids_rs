@@ -31,23 +31,23 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-use glam::{IVec2, UVec2};
+use glam::IVec2;
 
-use crate::{grid::Side, point::*};
+use crate::{geometry::GridRect, grid::Side, point::*};
 
 /// A sparse grid that stores elements in a [BTreeMap].
 #[derive(Default, Debug, Clone)]
-pub struct SparseGrid<T: Clone> {
+pub struct SparseGrid<T> {
     data: BTreeMap<usize, T>,
-    size: UVec2,
+    size: IVec2,
 }
 
 impl<T: Clone> SparseGrid<T> {
     /// Creates a new [SparseGrid<T>].
-    pub fn new(size: impl Size2d) -> Self {
+    pub fn new(size: impl GridPoint) -> Self {
         Self {
             data: BTreeMap::new(),
-            size: size.as_uvec2(),
+            size: size.as_ivec2(),
         }
     }
 
@@ -63,14 +63,14 @@ impl<T: Clone> SparseGrid<T> {
     ///
     /// Yields `&T`.
     pub fn iter_values(&self) -> impl Iterator<Item = &T> {
-        self.data.iter().map(move |(_, v)| v)
+        self.data.values()
     }
 
     /// A mutable iterator over just the values in the grid.
     ///
     /// Yields `&mut T`.
-    pub fn iter_values_mut(&self) -> impl Iterator<Item = &T> {
-        self.data.iter().map(move |(_, v)| v)
+    pub fn iter_values_mut(&mut self) -> impl Iterator<Item = &mut T> {
+        self.data.values_mut()
     }
 
     /// A mutable iterator over all elements in the grid.
@@ -122,7 +122,7 @@ impl<T: Clone> SparseGrid<T> {
         xy: impl GridPoint,
         row: impl IntoIterator<Item = T> + Iterator<Item = T>,
     ) {
-        let start = self.pos_to_index(xy);
+        let start = self.transform_lti(xy);
         let max = self.width() - 1 - xy.x() as usize;
         for (x, v) in row.take(max).enumerate() {
             self.data.insert(start + x, v);
@@ -148,7 +148,7 @@ impl<T: Clone> SparseGrid<T> {
         xy: impl GridPoint,
         column: impl IntoIterator<Item = T> + Iterator<Item = T>,
     ) {
-        let start = self.pos_to_index(xy);
+        let start = self.transform_lti(xy);
         let max = self.height() - 1 - xy.y() as usize;
         for (y, v) in column.take(max).enumerate() {
             let i = start + (y * self.width());
@@ -160,7 +160,7 @@ impl<T: Clone> SparseGrid<T> {
     ///
     /// Returns the removed element if one was present.
     pub fn remove(&mut self, pos: impl GridPoint) -> Option<T> {
-        let i = self.pos_to_index(pos);
+        let i = self.transform_lti(pos);
         self.data.remove(&i)
     }
 
@@ -185,7 +185,7 @@ impl<T: Clone> SparseGrid<T> {
         self.size.y as usize
     }
 
-    pub fn size(&self) -> UVec2 {
+    pub fn size(&self) -> IVec2 {
         self.size
     }
 
@@ -200,14 +200,14 @@ impl<T: Clone> SparseGrid<T> {
 
     /// Converts a 2d grid position to it's corresponding 1D index.
     #[inline(always)]
-    pub fn pos_to_index(&self, pos: impl GridPoint) -> usize {
+    pub fn transform_lti(&self, pos: impl GridPoint) -> usize {
         let [x, y] = pos.as_array();
         (y * self.width() as i32 + x) as usize
     }
 
     /// Converts a 1d index to it's corresponding grid position.
     #[inline(always)]
-    pub fn index_to_pos(&self, index: usize) -> impl GridPoint {
+    pub fn transform_itl(&self, index: usize) -> impl GridPoint {
         let index = index as i32;
         let w = self.width() as i32;
         let x = index % w;
@@ -225,10 +225,19 @@ impl<T: Clone> SparseGrid<T> {
         }
     }
 
+    /// Returns true if the position is in the bounds of the grid. Note this
+    /// doesn't necessarily mean a tile exists at that point - just that it's
+    /// in bounds.
     #[inline(always)]
-    pub fn is_in_bounds(&self, pos: impl GridPoint) -> bool {
+    pub fn in_bounds(&self, pos: impl GridPoint) -> bool {
         let xy = pos.as_ivec2();
-        xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.size.as_ivec2()).all()
+        xy.cmpge(IVec2::ZERO).all() && xy.cmplt(self.size).all()
+    }
+
+    /// Returns the bounds of the grid.
+    #[inline]
+    pub fn bounds(&self) -> GridRect {
+        GridRect::from_bl([0, 0], self.size)
     }
 
     /// Insert a value in the grid at the given 1d index.
@@ -247,7 +256,7 @@ impl<T: Clone> SparseGrid<T> {
     #[inline]
     pub fn insert(&mut self, pos: impl GridPoint, value: T) -> Option<T> {
         let pos = pos.as_ivec2();
-        let i = self.pos_to_index(pos);
+        let i = self.transform_lti(pos);
         self.data.insert(i, value)
     }
 
@@ -269,11 +278,15 @@ impl<T: Clone> SparseGrid<T> {
 
     /// Retrieve a value in the grid from it's 2d position.
     ///
-    /// Returns `None` if there is no value at the position.
+    /// Returns `None` if there is no value at the position, or if the position
+    /// is out of bounds.
     #[inline]
     pub fn get(&self, pos: impl GridPoint) -> Option<&T> {
-        let i = self.pos_to_index(pos.as_ivec2());
-        self.get_index(i)
+        if !self.in_bounds(pos) {
+            return None;
+        }
+        let i = self.transform_lti(pos.as_ivec2());
+        self.data.get(&i)
     }
 
     /// Retrieve a mutable value in the grid from it's 2d position.
@@ -281,7 +294,7 @@ impl<T: Clone> SparseGrid<T> {
     /// Returns `None` if there is no value at the position.
     #[inline]
     pub fn get_mut(&mut self, pos: impl GridPoint) -> Option<&mut T> {
-        let i = self.pos_to_index(pos.as_ivec2());
+        let i = self.transform_lti(pos.as_ivec2());
         self.data.get_mut(&i)
     }
 }
@@ -291,7 +304,7 @@ impl<T: Clone, P: GridPoint> Index<P> for SparseGrid<T> {
 
     fn index(&self, index: P) -> &Self::Output {
         let xy = index.as_ivec2();
-        let i = self.pos_to_index(xy);
+        let i = self.transform_lti(xy);
         &self.data[&i]
     }
 }
@@ -302,7 +315,8 @@ where
 {
     fn index_mut(&mut self, index: P) -> &mut T {
         let xy = index.as_ivec2();
-        let i = self.pos_to_index(xy);
+        let i = self.transform_lti(xy);
+        // TODO: Should this panic if no element exists?
         &mut *self.data.entry(i).or_default()
     }
 }
@@ -336,7 +350,7 @@ mod test {
     fn index() {
         let mut grid = SparseGrid::new([10, 17]);
 
-        let [x, y] = grid.index_to_pos(5).as_array();
+        let [x, y] = grid.transform_itl(5).as_array();
 
         grid[[5, 6]] = 10;
 

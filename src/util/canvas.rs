@@ -2,7 +2,7 @@
 
 use glam::UVec2;
 
-use crate::{GridPoint, Size2d};
+use crate::GridPoint;
 
 pub struct Canvas {
     size: UVec2,
@@ -10,7 +10,7 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn new(size: impl Size2d) -> Canvas {
+    pub fn new(size: impl GridPoint) -> Canvas {
         let string = str::repeat(" ", size.len());
 
         Canvas {

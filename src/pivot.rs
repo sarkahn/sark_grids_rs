@@ -2,7 +2,7 @@ use std::ops::{Mul, Sub};
 
 use glam::{IVec2, Vec2};
 
-use crate::{GridPoint, Size2d};
+use crate::GridPoint;
 
 /// A pivot point on a 2d rect.
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
@@ -40,7 +40,7 @@ impl Pivot {
     /// Transform a point to it's equivalent position from the perspective
     /// of this pivot
     #[inline]
-    pub fn transform_point(&self, point: impl GridPoint, size: impl Size2d) -> IVec2 {
+    pub fn transform_point(&self, point: impl GridPoint, size: impl GridPoint) -> IVec2 {
         let origin = size.as_vec2().sub(1.0).mul(Vec2::from(*self));
         let point = point.as_ivec2() * self.axis();
         origin.round().as_ivec2() + point
