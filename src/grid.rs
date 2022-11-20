@@ -163,15 +163,16 @@ impl<T: Clone> Grid<T> {
         p.round().as_ivec2()
     }
 
-    // #[inline(always)]
-    // pub fn transform_ltw(&self, xy: impl GridPoint) -> IVec2 {
-    //     self.pivot.transform_i2dtw(xy, self.size)
-    // }
-
-    // #[inline]
-    // pub fn transform_wtl(&self, xy: impl GridPoint) -> IVec2 {
-    //     self.pivot.transform_wti2d(xy, self.size)
-    // }
+    /// Try to retrieve the value at the given position.
+    ///
+    /// Returns None if the position is out of bounds.
+    #[inline]
+    pub fn get(&self, xy: impl GridPoint) -> Option<&T> {
+        if !self.in_bounds(xy) {
+            return None;
+        }
+        Some(&self[xy])
+    }
 
     #[inline]
     pub fn in_bounds(&self, pos: impl GridPoint) -> bool {
