@@ -1,6 +1,6 @@
 //! Utility for handling circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
-use glam::{IVec2, UVec2, Vec2};
+use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
@@ -76,7 +76,7 @@ impl GridCircleIter {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
         let c = center.as_vec2() + 0.5;
         let r = radius as f32;
-        let rect = GridRect::origin(UVec2::splat(radius as u32 * 2 + 1));
+        let rect = GridRect::origin(IVec2::splat(radius as i32 * 2 + 1));
         GridCircleIter {
             rect_iter: rect.into_iter(),
             center: c,

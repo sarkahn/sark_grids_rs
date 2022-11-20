@@ -125,7 +125,7 @@ impl GridRect {
     /// Return a rect with the same center but resized by the given amount
     /// on each axis
     pub fn resized(&self, amount: impl GridPoint) -> GridRect {
-        let size = (self.size + amount.as_ivec2()).max(IVec2::ONE).as_uvec2();
+        let size = (self.size + amount.as_ivec2()).max(IVec2::ONE).as_ivec2();
         GridRect::new(self.center, size)
     }
 

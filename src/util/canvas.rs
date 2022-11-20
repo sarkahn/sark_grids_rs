@@ -1,11 +1,10 @@
 //! Simple utility for drawing static images to the terminal.
 
-use glam::UVec2;
-
 use crate::GridPoint;
+use glam::IVec2;
 
 pub struct Canvas {
-    size: UVec2,
+    size: IVec2,
     string: String,
 }
 
@@ -14,7 +13,7 @@ impl Canvas {
         let string = str::repeat(" ", size.len());
 
         Canvas {
-            size: size.as_uvec2(),
+            size: size.as_ivec2(),
             string,
         }
     }
