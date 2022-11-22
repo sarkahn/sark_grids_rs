@@ -20,6 +20,10 @@ impl GridDiamond {
             size,
         }
     }
+
+    pub fn origin(size: usize) -> Self {
+        Self::new([0,0], size)
+    }
 }
 
 const DIRECTIONS: &[IVec2; 4] = &[DOWN_RIGHT, DOWN_LEFT, UP_LEFT, UP_RIGHT];
@@ -110,7 +114,7 @@ mod tests {
     #[ignore]
     fn draw() {
         for size in 0..10 {
-            let diamond = GridDiamond::new([size, size], size);
+            let diamond = GridDiamond::origin(size);
             let origin = diamond.pos;
             let mut canvas = Canvas::new([size * 2 + 1, size * 2 + 1]);
             for p in diamond {

@@ -25,7 +25,8 @@ impl Canvas {
     }
 
     fn to_index(&self, point: impl GridPoint) -> usize {
-        let [x, y] = point.as_array();
+        let p = point.as_ivec2() + self.size / 2; 
+        let [x, y] = p.to_array();
         //println!("XY {}, {}, W {}", x, y, self.size.x);
         y as usize * self.size.x as usize + x as usize
     }
@@ -43,12 +44,26 @@ mod tests {
     use super::Canvas;
 
     #[test]
-    fn print_test() {
-        let mut canvas = Canvas::new([10, 5]);
+    fn odd() {
+        let mut canvas = Canvas::new([5, 5]);
+        canvas.put([-2, -2], '*');
+        canvas.put([-1, -1], '*');
+        canvas.put([0, 0], '*');
         canvas.put([1, 1], '*');
         canvas.put([2, 2], '*');
-        canvas.put([3, 3], '*');
-        canvas.put([4, 4], '*');
+
+        canvas.print();
+    }
+
+    #[test]
+    fn even() {
+        let mut canvas = Canvas::new([6, 6]);
+        canvas.put([-3, -3], '*');
+        canvas.put([-2, -2], '*');
+        canvas.put([-1, -1], '*');
+        canvas.put([0, 0], '*');
+        canvas.put([1, 1], '*');
+        canvas.put([2, 2], '*');
 
         canvas.print();
     }

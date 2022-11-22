@@ -170,6 +170,62 @@ impl_grid_point!([u32; 2]);
 impl_grid_point!([i32; 2]);
 impl_grid_point!([usize; 2]);
 
+/// A trait for types representing a 2d size.
+#[allow(clippy::len_without_is_empty)]
+pub trait Size2d: Clone + Copy {
+    fn width(&self) -> usize;
+    fn height(&self) -> usize;
+
+    #[inline]
+    fn as_uvec2(&self) -> UVec2 {
+        UVec2::new(self.width() as u32, self.height() as u32)
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.width() * self.height()
+    }
+
+    #[inline]
+    fn as_vec2(&self) -> Vec2 {
+        self.as_uvec2().as_vec2()
+    }
+
+    #[inline]
+    fn as_ivec2(&self) -> IVec2 {
+        self.as_uvec2().as_ivec2()
+    }
+    #[inline]
+    fn as_array(&self) -> [usize; 2] {
+        [self.width(), self.height()]
+    }
+    #[inline]
+    fn as_usize_array(&self) -> [usize; 2] {
+        let p = self.as_uvec2();
+        [p.x as usize, p.y as usize]
+    }
+}
+
+macro_rules! impl_size2d {
+    ($type:ty) => {
+        impl Size2d for $type {
+            fn width(&self) -> usize {
+                self[0] as usize
+            }
+
+            fn height(&self) -> usize {
+                self[1] as usize
+            }
+        }
+    };
+}
+
+impl_size2d!(IVec2);
+impl_size2d!(UVec2);
+impl_size2d!([u32; 2]);
+impl_size2d!([i32; 2]);
+impl_size2d!([usize; 2]);
+
 /// A trait for types representing an arbitrary 2d point.
 pub trait Point2d {
     fn x(&self) -> f32;

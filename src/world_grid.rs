@@ -1,4 +1,4 @@
-use glam::{IVec2, Vec2};
+use glam::{IVec2, Vec2, UVec2};
 use itertools::Itertools;
 
 use crate::{point::Point2d, GridPoint, Pivot};
@@ -10,9 +10,9 @@ pub struct WorldGrid {
     /// The [`WorldSpace`] for this grid.
     pub world_space: WorldSpace,
     /// How many pixels constitute a "tile" in the grid.
-    pub pixels_per_tile: IVec2,
+    pub pixels_per_tile: UVec2,
     /// How many tiles the grid has.
-    pub tile_count: IVec2,
+    pub tile_count: UVec2,
 }
 
 impl WorldGrid {
@@ -20,8 +20,8 @@ impl WorldGrid {
     pub fn unit_grid(tile_count: impl GridPoint, pixels_per_tile: impl GridPoint) -> Self {
         Self {
             world_space: WorldSpace::Units,
-            pixels_per_tile: pixels_per_tile.as_ivec2(),
-            tile_count: tile_count.as_ivec2(),
+            pixels_per_tile: pixels_per_tile.as_uvec2(),
+            tile_count: tile_count.as_uvec2(),
         }
     }
 
@@ -29,8 +29,8 @@ impl WorldGrid {
     pub fn pixel_grid(tile_count: impl GridPoint, pixels_per_tile: impl GridPoint) -> Self {
         Self {
             world_space: WorldSpace::Pixels,
-            pixels_per_tile: pixels_per_tile.as_ivec2(),
-            tile_count: tile_count.as_ivec2(),
+            pixels_per_tile: pixels_per_tile.as_uvec2(),
+            tile_count: tile_count.as_uvec2(),
         }
     }
 
@@ -109,7 +109,7 @@ impl WorldGrid {
 
     #[inline]
     pub fn index_in_bounds(&self, index: impl GridPoint) -> bool {
-        let size = self.tile_count;
+        let size = self.tile_count.as_ivec2();
         let i = index.as_ivec2() + size / 2;
         i.cmpge(IVec2::ZERO).all() && i.cmplt(size).all()
     }
@@ -159,7 +159,7 @@ impl WorldGrid {
     /// grids will have all their tile centers offset by 0.5.
     #[inline]
     fn center_offset(&self) -> Vec2 {
-        let axis_even = (self.tile_count % 2).cmpeq(IVec2::ZERO);
+        let axis_even = (self.tile_count.as_ivec2() % 2).cmpeq(IVec2::ZERO);
         Vec2::select(axis_even, Vec2::ZERO, Vec2::splat(0.5))
     }
 }
