@@ -22,7 +22,7 @@ impl GridDiamond {
     }
 
     pub fn origin(size: usize) -> Self {
-        Self::new([0,0], size)
+        Self::new([0, 0], size)
     }
 }
 

@@ -26,10 +26,10 @@
 
 use std::ops::{Bound, Index, IndexMut, RangeBounds, Sub};
 
-use glam::{IVec2, Vec2, UVec2};
+use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{geometry::GridRect, GridPoint, Pivot, point::Size2d};
+use crate::{geometry::GridRect, point::Size2d, GridPoint, Pivot};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -49,8 +49,9 @@ impl<T> Default for Grid<T> {
 
 impl<T> Grid<T> {
     /// Creates a new [Grid<T>] with the given default value set for all elements.
-    pub fn new(size: impl Size2d) -> Self 
-        where T: Default + Clone
+    pub fn new(size: impl Size2d) -> Self
+    where
+        T: Default + Clone,
     {
         let size = size.as_ivec2();
         let len = (size.x * size.y) as usize;
@@ -61,8 +62,9 @@ impl<T> Grid<T> {
         }
     }
 
-    pub fn filled(value: T, size: impl Size2d) -> Self 
-        where T: Clone
+    pub fn filled(value: T, size: impl Size2d) -> Self
+    where
+        T: Clone,
     {
         let size = size.as_ivec2();
         let len = (size.x * size.y) as usize;
@@ -271,8 +273,9 @@ impl<T> Grid<T> {
         (min.y..=max.y)
             .cartesian_product(min.x..=max.x)
             .map(|(y, x)| {
-                let i = self.transform_lti([x,y]);
-                ((IVec2::new(x, y)), &self.data[i])})
+                let i = self.transform_lti([x, y]);
+                ((IVec2::new(x, y)), &self.data[i])
+            })
     }
 
     /// Returns an iterator which enumerates the 2d position of every value in the grid.
@@ -330,10 +333,12 @@ impl<T> Grid<T> {
         GridRect::from_bl([0, 0], self.size)
     }
 
-    /// Converts a 2d grid position to it's corresponding 1D index.
+    /// Converts a 2d grid position to it's corresponding 1D index. If a pivot
+    /// was applied to the given grid point, it will be accounted for.
     #[inline(always)]
     pub fn transform_lti(&self, xy: impl GridPoint) -> usize {
-        let [x, y] = xy.as_array();
+        let xy = self.pivoted_point(xy);
+        let [x, y] = xy.to_array();
         y as usize * self.width() + x as usize
     }
 

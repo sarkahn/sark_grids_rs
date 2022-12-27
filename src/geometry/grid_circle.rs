@@ -236,7 +236,7 @@ mod tests {
     #[ignore]
     fn draw_circles() {
         for size in 1..15 {
-            let empty_circle = GridCircleOutline::new([-(size as i32) / 2 - 2,0], size);
+            let empty_circle = GridCircleOutline::new([-(size as i32) / 2 - 2, 0], size);
             let mut canvas = Canvas::new([size * 4 + 3, size * 2 + 3]);
 
             for p in empty_circle {

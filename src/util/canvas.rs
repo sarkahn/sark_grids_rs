@@ -25,7 +25,7 @@ impl Canvas {
     }
 
     fn to_index(&self, point: impl GridPoint) -> usize {
-        let p = point.as_ivec2() + self.size / 2; 
+        let p = point.as_ivec2() + self.size / 2;
         let [x, y] = p.to_array();
         //println!("XY {}, {}, W {}", x, y, self.size.x);
         y as usize * self.size.x as usize + x as usize

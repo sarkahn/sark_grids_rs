@@ -570,9 +570,9 @@ mod tests {
     #[test]
     #[ignore]
     fn pivot_corner_draw_bl_tr() {
-        let mut canvas = Canvas::new([12,12]);
-        let a = GridRect::origin([5,5]).pivoted(Pivot::BottomLeft);
-        let b = GridRect::origin([5,5]).pivoted(Pivot::TopRight);
+        let mut canvas = Canvas::new([12, 12]);
+        let a = GridRect::origin([5, 5]).pivoted(Pivot::BottomLeft);
+        let b = GridRect::origin([5, 5]).pivoted(Pivot::TopRight);
         for p in a.into_iter().chain(b) {
             canvas.put(p, '*');
         }
@@ -582,9 +582,9 @@ mod tests {
     #[test]
     #[ignore]
     fn pivot_corner_draw_tl_br() {
-        let mut canvas = Canvas::new([12,12]);
-        let a = GridRect::origin([5,5]).pivoted(Pivot::TopLeft);
-        let b = GridRect::origin([5,5]).pivoted(Pivot::BottomRight);
+        let mut canvas = Canvas::new([12, 12]);
+        let a = GridRect::origin([5, 5]).pivoted(Pivot::TopLeft);
+        let b = GridRect::origin([5, 5]).pivoted(Pivot::BottomRight);
         for p in a.into_iter().chain(b) {
             canvas.put(p, '*');
         }
