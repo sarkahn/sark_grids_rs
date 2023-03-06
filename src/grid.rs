@@ -8,9 +8,9 @@
 //! # Example
 //!
 //! ```
-//! use sark_grids::prelude::*;
+//! use sark_grids::*;
 //!
-//! let mut grid = Grid::default([10,10]);
+//! let mut grid = Grid::new([10,10]);
 //!
 //! grid[0] = 'a';
 //! grid[ [1,0] ] = 'b';
@@ -138,7 +138,7 @@ impl<T> Grid<T> {
 
     /// Try to retrieve the value at the given position.
     ///
-    /// Returns None if the position is out of bounds.
+    /// Returns `None` if the position is out of bounds.
     #[inline]
     pub fn get(&self, xy: impl GridPoint) -> Option<&T> {
         if !self.in_bounds(xy) {
@@ -147,6 +147,17 @@ impl<T> Grid<T> {
         let i = self.transform_lti(xy);
         Some(&self.data[i])
     }
+
+    /// Try to retrieve the mutable value at the given position.
+    /// 
+    /// Returns `None` if the position is out of bounds.
+    pub fn get_mut(&mut self, xy: impl GridPoint) -> Option<&mut T> {
+        if !self.in_bounds(xy) {
+            return None;
+        }
+        let i = self.transform_lti(xy);
+        Some(&mut self.data[i])
+    } 
 
     #[inline]
     pub fn in_bounds(&self, pos: impl GridPoint) -> bool {
@@ -169,7 +180,7 @@ impl<T> Grid<T> {
         match axis {
             0 => self.width(),
             1 => self.height(),
-            _ => panic!("Invalid grid axis {}", axis),
+            _ => panic!("Invalid grid axis {axis}"),
         }
     }
 
@@ -258,7 +269,7 @@ impl<T> Grid<T> {
         match axis {
             0 => self.side_index(Side::Right),
             1 => self.side_index(Side::Top),
-            _ => panic!("Invalid grid axis {}", axis),
+            _ => panic!("Invalid grid axis {axis}"),
         }
     }
 
@@ -542,7 +553,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let grid = Grid::<i32>::new([10, 10]);
+        let grid = Grid::<i32>::filled(5, [10, 10]);
 
         let v: Vec<_> = grid.iter().collect();
 
