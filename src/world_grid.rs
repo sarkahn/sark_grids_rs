@@ -1,7 +1,7 @@
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{point::Point2d, GridPoint, Pivot, Size2d};
+use crate::{point::Point2d, GridPoint, Pivot};
 
 /// A sized grid which can be used to translate world positions to
 /// tile positions based on [`WorldSpace`] and the size of the grid.
@@ -17,7 +17,7 @@ pub struct WorldGrid {
 
 impl WorldGrid {
     /// Create a [`WorldGrid`] set to [`WorldSpace::Units`].
-    pub fn unit_grid(tile_count: impl Size2d, pixels_per_tile: impl Size2d) -> Self {
+    pub fn unit_grid(tile_count: impl GridPoint, pixels_per_tile: impl GridPoint) -> Self {
         Self {
             world_space: WorldSpace::Units,
             pixels_per_tile: pixels_per_tile.as_uvec2(),
@@ -26,7 +26,7 @@ impl WorldGrid {
     }
 
     /// Create a [`WorldGrid`] set to [`WorldSpace::Pixels`].
-    pub fn pixel_grid(tile_count: impl Size2d, pixels_per_tile: impl Size2d) -> Self {
+    pub fn pixel_grid(tile_count: impl GridPoint, pixels_per_tile: impl GridPoint) -> Self {
         Self {
             world_space: WorldSpace::Pixels,
             pixels_per_tile: pixels_per_tile.as_uvec2(),
@@ -159,7 +159,7 @@ impl WorldGrid {
     /// grids will have all their tile centers offset by 0.5.
     #[inline]
     fn center_offset(&self) -> Vec2 {
-        let axis_even = (self.tile_count % 2).cmpeq(UVec2::ZERO);
+        let axis_even = (self.tile_count.as_ivec2() % 2).cmpeq(IVec2::ZERO);
         Vec2::select(axis_even, Vec2::ZERO, Vec2::splat(0.5))
     }
 }

@@ -185,15 +185,15 @@ mod test {
     #[test]
     fn perp() {
         let size = IVec2::new(20, 20);
-        let mut canvas = Canvas::new(size);
+        let mut canvas = Canvas::new(size + 1);
 
         let arc = 85.;
         let len = (size.x / 2 - 1) as usize;
         let cones = [
-            GridCone::new(size / 2 - 1, 0., arc, len),
-            GridCone::new(size / 2 - 1, 90., arc, len),
-            GridCone::new(size / 2 - 1, 180., arc, len),
-            GridCone::new(size / 2 - 1, 270., arc, len),
+            GridCone::origin(0., arc, len),
+            GridCone::origin(90., arc, len),
+            GridCone::origin(180., arc, len),
+            GridCone::origin(270., arc, len),
         ];
 
         for cone in cones {
@@ -211,16 +211,16 @@ mod test {
 
     #[test]
     fn diag() {
-        let size = IVec2::new(20, 20);
-        let mut canvas = Canvas::new(size);
+        let size = IVec2::new(11, 11);
+        let mut canvas = Canvas::new(size + 1);
 
-        let arc = 65.;
+        let arc = 45.;
         let len = (size.x / 2 - 1) as usize;
         let cones = [
-            GridCone::new(size / 2 - 1, 45., arc, len),
-            GridCone::new(size / 2 - 1, 135., arc, len),
-            GridCone::new(size / 2 - 1, 225., arc, len),
-            GridCone::new(size / 2 - 1, 315., arc, len),
+            GridCone::origin(45., arc, len),
+            GridCone::origin(135., arc, len),
+            GridCone::origin(225., arc, len),
+            GridCone::origin(315., arc, len),
         ];
 
         for cone in cones {
@@ -233,18 +233,6 @@ mod test {
             }
         }
 
-        canvas.print();
-    }
-
-    #[test]
-    fn dir() {
-        let cone1 = GridCone::new([6, 3], 0.0, 45.0, 5);
-        let cone2 = GridCone::new([6, 3], 90.0, 45.0, 5);
-        let mut canvas = Canvas::new([15, 11]);
-        for (a, b) in cone1.iter().zip(cone2) {
-            canvas.put(a, '*');
-            canvas.put(b, '*');
-        }
         canvas.print();
     }
 }

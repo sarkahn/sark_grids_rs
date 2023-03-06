@@ -241,13 +241,13 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn line() {
-        let mut canvas = Canvas::new([11, 7]);
+    fn line_rect() {
+        let mut canvas = Canvas::new([11, 11]);
         let lines = [
-            GridLine::new([5, 3], [10, 5]),
-            GridLine::new([5, 3], [10, 1]),
-            GridLine::new([5, 3], [0, 1]),
-            GridLine::new([5, 3], [0, 5]),
+            GridLine::new([-4, -4], [-4, 4]),
+            GridLine::new([-4, 4], [4, 4]),
+            GridLine::new([4, 4], [4, -4]),
+            GridLine::new([4, -4], [-4, -4]),
         ];
         for p in lines.iter().flat_map(|l| l.iter()) {
             canvas.put(p, '*');
@@ -258,12 +258,12 @@ mod tests {
     #[test]
     #[ignore]
     fn line_orthogonal() {
-        let mut canvas = Canvas::new([20, 20]);
+        let mut canvas = Canvas::new([11, 11]);
         let lines = [
-            GridLineOrtho::new([5, 5], [10, 9]),
-            GridLineOrtho::new([5, 5], [10, 1]),
-            GridLineOrtho::new([5, 5], [0, 1]),
-            GridLineOrtho::new([5, 5], [0, 9]),
+            GridLineOrtho::new([0, 0], [4, 4]),
+            GridLineOrtho::new([0, 0], [-4, 4]),
+            GridLineOrtho::new([0, 0], [-4, -4]),
+            GridLineOrtho::new([0, 0], [4, -4]),
         ];
         for p in lines.iter().flat_map(|l| l.iter()) {
             canvas.put(p, '*');

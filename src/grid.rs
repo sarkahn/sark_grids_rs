@@ -8,9 +8,9 @@
 //! # Example
 //!
 //! ```
-//! use sark_grids::prelude::*;
+//! use sark_grids::*;
 //!
-//! let mut grid = Grid::default([10,10]);
+//! let mut grid = Grid::new([10,10]);
 //!
 //! grid[0] = 'a';
 //! grid[ [1,0] ] = 'b';
@@ -29,77 +29,50 @@ use std::ops::{Bound, Index, IndexMut, RangeBounds, Sub};
 use glam::{IVec2, UVec2, Vec2};
 use itertools::Itertools;
 
-use crate::{geometry::GridRect, GridPoint, Pivot, Size2d};
+use crate::{geometry::GridRect, point::Size2d, GridPoint, Pivot};
 
 /// A dense sized grid that stores it's elements in a `Vec`.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Grid<T: Clone> {
+pub struct Grid<T> {
     data: Vec<T>,
     size: UVec2,
 }
 
-impl<T: Clone> Default for Grid<T> {
+impl<T> Default for Grid<T> {
     fn default() -> Self {
         Self {
             data: Default::default(),
             size: Default::default(),
-            //origin: Default::default(),
-            //pivot: Pivot::BottomLeft,
-            // pivot_offset: Vec2::ZERO,
         }
     }
 }
 
-impl<T: Clone> Grid<T> {
+impl<T> Grid<T> {
     /// Creates a new [Grid<T>] with the given default value set for all elements.
-    pub fn new(value: T, size: impl Size2d) -> Self {
-        let size = size.as_uvec2();
+    pub fn new(size: impl Size2d) -> Self
+    where
+        T: Default + Clone,
+    {
+        let size = size.as_ivec2();
+        let len = (size.x * size.y) as usize;
+
+        Self {
+            data: vec![T::default(); len],
+            size: size.as_uvec2(),
+        }
+    }
+
+    pub fn filled(value: T, size: impl Size2d) -> Self
+    where
+        T: Clone,
+    {
+        let size = size.as_ivec2();
         let len = (size.x * size.y) as usize;
 
         Self {
             data: vec![value; len],
-            size,
+            size: size.as_uvec2(),
         }
-    }
-
-    // /// Sets the pivot point for the grid. For indexing with 2d coordinates the
-    // /// "origin" of the grid always sits on the pivot. IE for a center pivot
-    // /// 3x3 grid:
-    // ///
-    // /// # Center pivot
-    // /// ```ignore
-    // /// [-1, 1] | [ 0, 1] | [ 1, 1]
-    // /// [-1, 0] | *[0,0]* | [ 1, 0]
-    // /// [-1,-1] | [ 0,-1] | [ 1,-1]
-    // /// ```
-    // ///
-    // /// ```ignore
-    // /// [-1, 1] | [ 0, 1] | [ 1, 1]
-    // /// [-1, 0] | *[0,0]* | [ 1, 0]
-    // /// [-1,-1] | [ 0,-1] | [ 1,-1]
-    // /// ```
-    // ///
-    // /// The `transform_ltw` and `transform_wtl` functions can be used to
-    // /// transform between world space and grid local space.
-    // ///
-    // /// Note that 1d indices ignore the pivot and are used to directly index
-    // /// the underlying vec.
-    // pub fn with_pivot(mut self, pivot: Pivot) -> Self {
-    //     self.set_pivot(pivot);
-    //     self
-    // }
-
-    // pub fn set_pivot(&mut self, pivot: Pivot) {
-    //     self.pivot = pivot;
-    //     self.pivot_offset = self.size.as_vec2() * Vec2::from(pivot);
-    // }
-
-    /// Creates a new [Grid<T>] with all elements initialized to default values.
-    pub fn default(size: impl Size2d) -> Self
-    where
-        T: Default,
-    {
-        Grid::new(T::default(), size)
     }
 
     /// Insert into a row of the grid using an iterator.
@@ -165,13 +138,25 @@ impl<T: Clone> Grid<T> {
 
     /// Try to retrieve the value at the given position.
     ///
-    /// Returns None if the position is out of bounds.
+    /// Returns `None` if the position is out of bounds.
     #[inline]
     pub fn get(&self, xy: impl GridPoint) -> Option<&T> {
         if !self.in_bounds(xy) {
             return None;
         }
-        Some(&self[xy])
+        let i = self.transform_lti(xy);
+        Some(&self.data[i])
+    }
+
+    /// Try to retrieve the mutable value at the given position.
+    ///
+    /// Returns `None` if the position is out of bounds.
+    pub fn get_mut(&mut self, xy: impl GridPoint) -> Option<&mut T> {
+        if !self.in_bounds(xy) {
+            return None;
+        }
+        let i = self.transform_lti(xy);
+        Some(&mut self.data[i])
     }
 
     #[inline]
@@ -193,9 +178,9 @@ impl<T: Clone> Grid<T> {
     // Size of the grid along a given axis, where 0 == x and 1 == y
     pub fn axis_size(&self, axis: usize) -> usize {
         match axis {
-            0 => self.width() as usize,
-            1 => self.height() as usize,
-            _ => panic!("Invalid grid axis {}", axis),
+            0 => self.width(),
+            1 => self.height(),
+            _ => panic!("Invalid grid axis {axis}"),
         }
     }
 
@@ -216,7 +201,7 @@ impl<T: Clone> Grid<T> {
     /// Goes from left to right.
     #[inline]
     pub fn iter_row(&self, y: usize) -> impl DoubleEndedIterator<Item = &T> {
-        let w = self.width() as usize;
+        let w = self.width();
         let i = y * w;
         self.data[i..i + w].iter()
     }
@@ -226,7 +211,7 @@ impl<T: Clone> Grid<T> {
     /// Iterates from left to right.
     #[inline]
     pub fn iter_row_mut(&mut self, y: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-        let w = self.width() as usize;
+        let w = self.width();
         let i = y * w;
         self.data[i..i + w].iter_mut()
     }
@@ -239,7 +224,7 @@ impl<T: Clone> Grid<T> {
         range: impl RangeBounds<usize>,
     ) -> impl DoubleEndedIterator<Item = &[T]> {
         let [start, end] = self.range_to_start_end(range, 1);
-        let width = self.width() as usize;
+        let width = self.width();
         let x = start * width;
         let count = end.saturating_sub(start) + 1;
         let chunks = self.data[x..].chunks(width);
@@ -254,7 +239,7 @@ impl<T: Clone> Grid<T> {
         range: impl RangeBounds<usize>,
     ) -> impl DoubleEndedIterator<Item = &mut [T]> {
         let [start, end] = self.range_to_start_end(range, 1);
-        let width = self.width() as usize;
+        let width = self.width();
         let x = start * width;
         let count = end - start + 1;
         let chunks = self.data[x..].chunks_mut(width);
@@ -266,8 +251,8 @@ impl<T: Clone> Grid<T> {
     /// Goes from bottom to top.
     #[inline]
     pub fn iter_column(&self, x: usize) -> impl DoubleEndedIterator<Item = &T> {
-        let w = self.width() as usize;
-        return self.data[x as usize..].iter().step_by(w);
+        let w = self.width();
+        return self.data[x..].iter().step_by(w);
     }
 
     /// A mutable iterator over a single column of the grid.
@@ -275,7 +260,7 @@ impl<T: Clone> Grid<T> {
     /// Goes from bottom to top.
     #[inline]
     pub fn iter_column_mut(&mut self, x: usize) -> impl DoubleEndedIterator<Item = &mut T> {
-        let w = self.width() as usize;
+        let w = self.width();
         return self.data[x..].iter_mut().step_by(w);
     }
 
@@ -284,7 +269,7 @@ impl<T: Clone> Grid<T> {
         match axis {
             0 => self.side_index(Side::Right),
             1 => self.side_index(Side::Top),
-            _ => panic!("Invalid grid axis {}", axis),
+            _ => panic!("Invalid grid axis {axis}"),
         }
     }
 
@@ -298,7 +283,10 @@ impl<T: Clone> Grid<T> {
         let (min, max) = ranges_to_min_max(range, self.size().as_ivec2());
         (min.y..=max.y)
             .cartesian_product(min.x..=max.x)
-            .map(|(y, x)| ((IVec2::new(x, y)), &self[[x, y]]))
+            .map(|(y, x)| {
+                let i = self.transform_lti([x, y]);
+                ((IVec2::new(x, y)), &self.data[i])
+            })
     }
 
     /// Returns an iterator which enumerates the 2d position of every value in the grid.
@@ -350,16 +338,18 @@ impl<T: Clone> Grid<T> {
         [start, end]
     }
 
-    /// Returns the bounds of the grid, accounting for the grid's [Pivot].
+    /// Returns the bounds of the grid.
     #[inline]
     pub fn bounds(&self) -> GridRect {
-        GridRect::from_points([0, 0], self.size.as_ivec2().sub(1))
+        GridRect::from_bl([0, 0], self.size)
     }
 
-    /// Converts a 2d grid position to it's corresponding 1D index.
+    /// Converts a 2d grid position to it's corresponding 1D index. If a pivot
+    /// was applied to the given grid point, it will be accounted for.
     #[inline(always)]
     pub fn transform_lti(&self, xy: impl GridPoint) -> usize {
-        let [x, y] = xy.as_array();
+        let xy = self.pivoted_point(xy);
+        let [x, y] = xy.to_array();
         y as usize * self.width() + x as usize
     }
 
@@ -469,7 +459,7 @@ mod tests {
 
     #[test]
     fn range_convert() {
-        let grid = Grid::new(0, [5, 11]);
+        let grid = Grid::filled(0, [5, 11]);
         let [start, end] = grid.range_to_start_end(.., 0);
         assert_eq!([start, end], [0, 5]);
         let [start, count] = grid.range_to_start_end(5..=10, 0);
@@ -480,7 +470,7 @@ mod tests {
 
     #[test]
     fn rows_iter() {
-        let mut grid = Grid::default([3, 10]);
+        let mut grid = Grid::new([3, 10]);
         grid.insert_row(3, std::iter::repeat(5));
         grid.insert_row(4, std::iter::repeat(6));
 
@@ -492,7 +482,7 @@ mod tests {
 
     #[test]
     fn rows_iter_mut() {
-        let mut grid = Grid::default([3, 4]);
+        let mut grid = Grid::new([3, 4]);
         for row in grid.iter_rows_mut(..) {
             row.iter_mut().for_each(|v| *v = 5);
         }
@@ -502,7 +492,7 @@ mod tests {
 
     #[test]
     fn row_iter() {
-        let mut grid = Grid::default([10, 15]);
+        let mut grid = Grid::new([10, 15]);
 
         let chars = "hello".chars();
 
@@ -519,7 +509,7 @@ mod tests {
 
     #[test]
     fn column_iter() {
-        let mut grid = Grid::default([10, 15]);
+        let mut grid = Grid::new([10, 15]);
 
         let chars = ['h', 'e', 'l', 'l', 'o'];
 
@@ -536,7 +526,7 @@ mod tests {
 
     #[test]
     fn iter_2d() {
-        let mut grid = Grid::new(0, [5, 3]);
+        let mut grid = Grid::new([5, 3]);
         grid[[0, 0]] = 5;
         grid[[3, 1]] = 10;
         grid[[4, 2]] = 20;
@@ -563,7 +553,7 @@ mod tests {
 
     #[test]
     fn iter() {
-        let grid = Grid::new(5, [10, 10]);
+        let grid = Grid::<i32>::filled(5, [10, 10]);
 
         let v: Vec<_> = grid.iter().collect();
 
@@ -574,7 +564,7 @@ mod tests {
 
     #[test]
     fn iter_mut() {
-        let mut grid = Grid::new(5, [10, 10]);
+        let mut grid = Grid::new([10, 10]);
 
         for i in grid.iter_mut() {
             *i = 10;
@@ -585,7 +575,7 @@ mod tests {
 
     #[test]
     fn rect_iter() {
-        let mut grid = Grid::new(0, [11, 15]);
+        let mut grid = Grid::new([11, 15]);
 
         grid[[2, 2]] = 5;
         grid[[4, 4]] = 10;
@@ -606,7 +596,7 @@ mod tests {
 
     #[test]
     fn column_insert() {
-        let mut grid = Grid::default([10, 10]);
+        let mut grid = Grid::new([10, 10]);
 
         grid.insert_column(3, "Hello".chars());
 
@@ -617,7 +607,7 @@ mod tests {
 
     #[test]
     fn row_insert() {
-        let mut grid = Grid::default([10, 10]);
+        let mut grid = Grid::new([10, 10]);
 
         grid.insert_row(3, "Hello".chars());
 
@@ -628,11 +618,11 @@ mod tests {
 
     #[test]
     fn ltw() {
-        let grid = Grid::new(0, [10, 10]);
+        let grid = Grid::filled(0, [10, 10]);
         assert_eq!([5, 5], grid.transform_wtl([0, 0]).to_array());
         assert_eq!([0, 0], grid.transform_ltw([5, 5]).to_array());
 
-        let grid = Grid::new(0, [9, 9]);
+        let grid = Grid::filled(0, [9, 9]);
         assert_eq!([4, 4], grid.transform_wtl([0, 0]).to_array());
         assert_eq!([0, 0], grid.transform_ltw([4, 4]).to_array());
     }

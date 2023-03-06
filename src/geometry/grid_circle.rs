@@ -1,6 +1,6 @@
 //! Utility for handling circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
-use glam::{IVec2, UVec2, Vec2};
+use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
@@ -76,7 +76,7 @@ impl GridCircleIter {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
         let c = center.as_vec2() + 0.5;
         let r = radius as f32;
-        let rect = GridRect::origin(UVec2::splat(radius as u32 * 2 + 1));
+        let rect = GridRect::origin(IVec2::splat(radius as i32 * 2 + 1));
         GridCircleIter {
             rect_iter: rect.into_iter(),
             center: c,
@@ -197,7 +197,7 @@ impl Iterator for GridCircleOutlineIter {
             let r = self.r as f32;
             let d = (self.radius * self.radius - r * r).sqrt().floor();
 
-            let c = self.center.as_vec2() + Vec2::splat(0.5);
+            let c = self.center.as_vec2();
             self.points[0] = Vec2::new(c.x - d, c.y + r).as_ivec2();
             self.points[1] = Vec2::new(c.x + d, c.y + r).as_ivec2();
             self.points[2] = Vec2::new(c.x - d, c.y - r).as_ivec2();
@@ -236,16 +236,14 @@ mod tests {
     #[ignore]
     fn draw_circles() {
         for size in 1..15 {
-            let x = size + 1;
-            let y = size + 1;
-            let empty_circle = GridCircleOutline::new([x, y], size);
-            let mut canvas = Canvas::new([size * 4 + 5, size * 2 + 3]);
+            let empty_circle = GridCircleOutline::new([-(size as i32) / 2 - 2, 0], size);
+            let mut canvas = Canvas::new([size * 4 + 3, size * 2 + 3]);
 
             for p in empty_circle {
                 canvas.put(p, '*');
             }
 
-            let filled_circle = GridCircle::new([x + size * 2 + 2, y], size);
+            let filled_circle = GridCircle::new([size / 2 + 2, 0], size);
 
             for p in filled_circle {
                 canvas.put(p, '*');

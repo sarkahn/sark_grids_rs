@@ -439,8 +439,8 @@ mod tests {
     #[test]
     #[ignore]
     fn iter() {
-        let rect = GridRect::new([3, 3], [3, 3]);
-        let mut canvas = Canvas::new([6, 6]);
+        let rect = GridRect::origin([3, 3]);
+        let mut canvas = Canvas::new([5, 5]);
         for p in rect {
             canvas.put(p, '*');
         }
@@ -450,7 +450,7 @@ mod tests {
     #[test]
     #[ignore]
     fn big() {
-        let rect = GridRect::new([16, 16], [30, 30]);
+        let rect = GridRect::origin([30, 30]);
         let mut canvas = Canvas::new([32, 32]);
 
         for p in rect {
@@ -565,6 +565,30 @@ mod tests {
         let rect = GridRect::origin([6, 6]);
         let rect = rect.pivoted(Pivot::BottomRight);
         assert_eq!([-1, 0], rect.pivot_point(Pivot::BottomRight).to_array());
+    }
+
+    #[test]
+    #[ignore]
+    fn pivot_corner_draw_bl_tr() {
+        let mut canvas = Canvas::new([12, 12]);
+        let a = GridRect::origin([5, 5]).pivoted(Pivot::BottomLeft);
+        let b = GridRect::origin([5, 5]).pivoted(Pivot::TopRight);
+        for p in a.into_iter().chain(b) {
+            canvas.put(p, '*');
+        }
+        canvas.print();
+    }
+
+    #[test]
+    #[ignore]
+    fn pivot_corner_draw_tl_br() {
+        let mut canvas = Canvas::new([12, 12]);
+        let a = GridRect::origin([5, 5]).pivoted(Pivot::TopLeft);
+        let b = GridRect::origin([5, 5]).pivoted(Pivot::BottomRight);
+        for p in a.into_iter().chain(b) {
+            canvas.put(p, '*');
+        }
+        canvas.print();
     }
 
     #[test]

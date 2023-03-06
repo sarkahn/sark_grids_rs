@@ -8,9 +8,22 @@ use crate::{
 };
 
 /// A trait for types representing an integer point on a 2d grid.
+#[allow(clippy::len_without_is_empty)]
 pub trait GridPoint: Clone + Copy {
     fn x(&self) -> i32;
     fn y(&self) -> i32;
+
+    fn width(&self) -> i32 {
+        self.x()
+    }
+
+    fn height(&self) -> i32 {
+        self.y()
+    }
+
+    fn len(&self) -> usize {
+        (self.x() * self.y()) as usize
+    }
 
     fn as_ivec2(&self) -> IVec2 {
         IVec2::new(self.x(), self.y())

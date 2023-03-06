@@ -1,6 +1,7 @@
 //! Utilities for building geometric shapes on a grid.
 mod grid_circle;
 mod grid_cone;
+mod grid_diamond;
 mod grid_line;
 mod grid_rect;
 use glam::IVec2;
@@ -8,6 +9,7 @@ use glam::IVec2;
 use self::grid_circle::GridCircleIter;
 use self::grid_circle::GridCircleOutlineIter;
 use self::grid_cone::GridConeIter;
+use self::grid_diamond::GridDiamondIter;
 use self::grid_line::GridLineIter;
 use self::grid_line::GridLineOrthoIter;
 use self::grid_rect::GridRectIter;
@@ -15,6 +17,7 @@ use self::grid_rect::GridRectIter;
 pub use grid_circle::GridCircle;
 pub use grid_circle::GridCircleOutline;
 pub use grid_cone::GridCone;
+pub use grid_diamond::GridDiamond;
 pub use grid_line::GridLine;
 pub use grid_line::GridLineOrtho;
 pub use grid_rect::GridRect;
@@ -36,6 +39,7 @@ pub enum GridShapeIterator {
     Line(GridLineIter),
     LineOrtho(GridLineOrthoIter),
     Cone(GridConeIter),
+    Diamond(GridDiamondIter),
 }
 
 impl Iterator for GridShapeIterator {
@@ -50,6 +54,7 @@ impl Iterator for GridShapeIterator {
             GridShapeIterator::Line(i) => i.next(),
             GridShapeIterator::LineOrtho(i) => i.next(),
             GridShapeIterator::Cone(i) => i.next(),
+            GridShapeIterator::Diamond(i) => i.next(),
         }
     }
 }
