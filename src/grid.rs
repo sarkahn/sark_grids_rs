@@ -149,7 +149,7 @@ impl<T> Grid<T> {
     }
 
     /// Try to retrieve the mutable value at the given position.
-    /// 
+    ///
     /// Returns `None` if the position is out of bounds.
     pub fn get_mut(&mut self, xy: impl GridPoint) -> Option<&mut T> {
         if !self.in_bounds(xy) {
@@ -157,7 +157,7 @@ impl<T> Grid<T> {
         }
         let i = self.transform_lti(xy);
         Some(&mut self.data[i])
-    } 
+    }
 
     #[inline]
     pub fn in_bounds(&self, pos: impl GridPoint) -> bool {
