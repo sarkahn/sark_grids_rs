@@ -32,11 +32,6 @@ impl Pivot {
         }
     }
 
-    // #[inline]
-    // fn transform_point(&self, point: impl GridPoint) -> IVec2 {
-    //     point.as_ivec2() * self.axis()
-    // }
-
     /// Transform a point to it's equivalent position from the perspective
     /// of this pivot
     #[inline]
@@ -77,16 +72,6 @@ impl GridPoint for PivotedPoint {
         self.point.y
     }
 
-    // /// Retrieve the pivot aligned point.
-    // #[inline]
-    // fn get_aligned_point(&self, size: impl Size2d) -> IVec2 {
-    //     if let Some(pivot) = self.pivot {
-    //         todo!()
-    //     } else {
-    //         self.point
-    //     }
-    // }
-
     fn get_pivot(self) -> Option<Pivot> {
         Some(self.pivot)
     }
@@ -95,15 +80,6 @@ impl GridPoint for PivotedPoint {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // #[test]
-    // fn pivot_point() {
-    //     let p = [0, 0].pivot(Pivot::TopRight);
-    //     assert_eq!([9, 9], p.get_aligned_point([10, 10]).to_array());
-
-    //     let p = [3, 3].pivot(Pivot::TopLeft);
-    //     assert_eq!([3, 6], p.get_aligned_point([10, 10]).to_array());
-    // }
 
     #[test]
     fn transform_point() {

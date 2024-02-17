@@ -1,8 +1,6 @@
 //! Utility for handlines lines on a 2d grid.
-use std::ops::Sub;
-
-// https://www.redblobgames.com/grids/line-drawing.html
 use glam::IVec2;
+use std::ops::Sub;
 
 use crate::GridPoint;
 
@@ -82,6 +80,7 @@ impl GridLineIter {
 impl Iterator for GridLineIter {
     type Item = IVec2;
 
+    // https://www.redblobgames.com/grids/line-drawing.html
     fn next(&mut self) -> Option<Self::Item> {
         if self.step > self.dist {
             return None;

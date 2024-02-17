@@ -76,7 +76,7 @@ impl GridCircleIter {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
         let c = center.as_vec2() + 0.5;
         let r = radius as f32;
-        let rect = GridRect::origin(IVec2::splat(radius as i32 * 2 + 1));
+        let rect = GridRect::center_origin(IVec2::splat(radius as i32 * 2 + 1));
         GridCircleIter {
             rect_iter: rect.into_iter(),
             center: c,
