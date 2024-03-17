@@ -1,6 +1,6 @@
 [package]
 name = "sark_grids"
-version = "0.5.8"
+version = "0.5.9"
 edition = "2021"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/sark_grids_rs"
@@ -11,7 +11,5 @@ keywords = ["2d", "grid", "sparse_grid"]
 description = "A set of grids for storing and accessing data in a grid-like way."
 
 [dependencies]
-glam = "0.24"
-itertools = "0.10.3"
-
-
+glam = "0.25"
+itertools = "0.12.1"
