@@ -168,7 +168,6 @@ impl<T: Clone> SparseGrid<T> {
     ///
     /// Returns the removed element if one was present.
     pub fn remove_index(&mut self, index: usize) -> Option<T> {
-        let index = index;
         self.data.remove(&index)
     }
 
