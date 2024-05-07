@@ -5,19 +5,18 @@ use crate::{
     GridPoint,
 };
 
-use super::{GridRect, GridShape};
-
+/// A diamond of points on a 2d grid.
 #[derive(Default, Clone, Debug, Copy, PartialEq, Eq)]
 pub struct GridDiamond {
     pub pos: IVec2,
-    pub size: usize,
+    pub radius: usize,
 }
 
 impl GridDiamond {
     pub fn new(pos: impl GridPoint, size: usize) -> Self {
         Self {
             pos: pos.as_ivec2(),
-            size,
+            radius: size,
         }
     }
 
@@ -81,26 +80,7 @@ impl IntoIterator for GridDiamond {
     type IntoIter = GridDiamondIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        GridDiamondIter::new(self.pos, self.size)
-    }
-}
-
-impl GridShape for GridDiamond {
-    fn iter(&self) -> super::GridShapeIterator {
-        super::GridShapeIterator::Diamond(self.into_iter())
-    }
-
-    fn pos(&self) -> IVec2 {
-        self.pos
-    }
-
-    fn set_pos(&mut self, pos: IVec2) {
-        self.pos = pos;
-    }
-
-    fn bounds(&self) -> GridRect {
-        let size = self.size * 2 + 1;
-        GridRect::new(self.pos, [size, size])
+        GridDiamondIter::new(self.pos, self.radius)
     }
 }
 

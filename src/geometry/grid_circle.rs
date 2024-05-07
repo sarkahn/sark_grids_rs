@@ -1,12 +1,11 @@
-//! Utility for handling circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
 use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
-use super::{grid_rect::GridRectIter, GridRect, GridShape};
+use super::{grid_rect::GridRectIter, GridRect};
 
-/// A filled circle. Points within the circle can be iterator over.
+/// A filled circle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridCircle {
     pub center: IVec2,
@@ -26,7 +25,7 @@ impl GridCircle {
         Self::new([0, 0], radius)
     }
 
-    /// Create an outlined circle with this circle's position and size.
+    /// Create an outlined circle with this circle's center and radius.
     pub fn outline(&self) -> GridCircleOutline {
         GridCircleOutline::new(self.center, self.radius)
     }
@@ -43,25 +42,6 @@ impl GridCircle {
         let p = p.as_ivec2() - self.center;
         let dist_sq = p.x * p.x + p.y * p.y;
         dist_sq <= (self.radius * self.radius) as i32
-    }
-}
-
-impl GridShape for GridCircle {
-    fn iter(&self) -> super::GridShapeIterator {
-        super::GridShapeIterator::Circle(self.into_iter())
-    }
-
-    fn pos(&self) -> IVec2 {
-        self.center
-    }
-
-    fn set_pos(&mut self, pos: IVec2) {
-        self.center = pos;
-    }
-
-    fn bounds(&self) -> GridRect {
-        let r = self.radius * 2;
-        GridRect::new(self.center, [r, r])
     }
 }
 
@@ -114,7 +94,7 @@ impl IntoIterator for GridCircle {
     }
 }
 
-/// A hollow circle.
+/// A hollow circle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridCircleOutline {
     center: IVec2,
@@ -148,25 +128,6 @@ pub struct GridCircleOutlineIter {
     end: usize,
     points: [IVec2; 8],
     curr: usize,
-}
-
-impl GridShape for GridCircleOutline {
-    fn iter(&self) -> super::GridShapeIterator {
-        super::GridShapeIterator::CircleOutline(self.into_iter())
-    }
-
-    fn pos(&self) -> IVec2 {
-        self.center
-    }
-
-    fn set_pos(&mut self, pos: IVec2) {
-        self.center = pos;
-    }
-
-    fn bounds(&self) -> GridRect {
-        let r = self.radius * 2;
-        GridRect::new(self.center, [r, r])
-    }
 }
 
 impl GridCircleOutlineIter {

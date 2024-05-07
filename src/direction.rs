@@ -41,7 +41,7 @@ impl From<Dir4> for IVec2 {
 }
 
 impl Dir4 {
-    /// Retrieve the direction from the given point, or none if it's (0,0).
+    /// Retrieve the direction from the given point, or none if it's `[0,0]`.
     pub fn from_point(p: impl GridPoint) -> Option<Dir4> {
         match p.as_ivec2().signum().to_array() {
             [0, 1] => Some(Dir4::Up),
@@ -53,7 +53,7 @@ impl Dir4 {
     }
 
     /// Retrieve a direction from it's corresponding index.
-    pub fn from_index(i: usize) -> Option<Dir4> {
+    pub const fn from_index(i: usize) -> Option<Dir4> {
         match i {
             0 => Some(Dir4::Up),
             1 => Some(Dir4::Down),
@@ -64,7 +64,7 @@ impl Dir4 {
     }
 
     /// Convert a direction to it's corresponding index.
-    pub fn to_index(&self) -> usize {
+    pub const fn to_index(&self) -> usize {
         match self {
             Dir4::Up => 0,
             Dir4::Down => 1,

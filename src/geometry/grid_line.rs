@@ -1,4 +1,4 @@
-//! Utility for handlines lines on a 2d grid.
+// https://www.redblobgames.com/grids/line-drawing.html
 use glam::IVec2;
 use std::ops::Sub;
 
@@ -6,7 +6,7 @@ use crate::GridPoint;
 
 use super::{GridRect, GridShape};
 
-/// A line of points on a grid.
+/// A line of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridLine {
     pub start: IVec2,
@@ -49,7 +49,7 @@ impl GridShape for GridLine {
         self.end = self.start + v;
     }
 
-    fn bounds(&self) -> super::GridRect {
+    fn rect(&self) -> super::GridRect {
         let min = self.start.min(self.end);
         let max = self.start.max(self.end);
         GridRect::from_points(min, max)
@@ -80,7 +80,6 @@ impl GridLineIter {
 impl Iterator for GridLineIter {
     type Item = IVec2;
 
-    // https://www.redblobgames.com/grids/line-drawing.html
     fn next(&mut self) -> Option<Self::Item> {
         if self.step > self.dist {
             return None;
@@ -158,7 +157,7 @@ impl GridShape for GridLineOrtho {
         self.end = self.start + v;
     }
 
-    fn bounds(&self) -> super::GridRect {
+    fn rect(&self) -> super::GridRect {
         let min = self.start.min(self.end);
         let max = self.start.max(self.end);
         GridRect::from_points(min, max)

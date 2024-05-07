@@ -1,36 +1,33 @@
-//! Utility for handling cones/triangles on a 2d grid.
-
 use glam::IVec2;
 
 use crate::GridPoint;
 
-use super::{GridRect, GridShape, GridShapeIterator};
-
+/// A cone/triangle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct GridCone {
     pub pos: IVec2,
     /// Angle of the cone in radians
     pub angle_dir_rad: f32,
-    /// Size/Arc of the cone in radians
-    pub angle_size_rad: f32,
+    /// Arc of the cone in radians
+    pub angle_arc_rad: f32,
     pub range: usize,
 }
 
 impl GridCone {
-    /// Create a new grid from angles represented in degrees.
+    /// Create a new [GridCone] from angles represented in degrees.
     ///
     /// Note an angle of `0.` points to the right, and an angle of `90.` points
     /// straight up (angle increases counter-clockwise).
-    pub fn new(xy: impl GridPoint, dir_deg: f32, size_deg: f32, range: usize) -> Self {
+    pub fn new(xy: impl GridPoint, dir_deg: f32, arc_deg: f32, range: usize) -> Self {
         Self {
             pos: xy.as_ivec2(),
             angle_dir_rad: dir_deg.to_radians(),
-            angle_size_rad: size_deg.to_radians(),
+            angle_arc_rad: arc_deg.to_radians(),
             range,
         }
     }
 
-    /// Create a cone with it's position set to 0,0
+    /// Create a cone with it's position set to `[0,0]`
     pub fn origin(dir_deg: f32, size_deg: f32, range: usize) -> Self {
         Self::new([0, 0], dir_deg, size_deg, range)
     }
@@ -40,7 +37,7 @@ impl GridCone {
     /// The first point is the position of the cone, and the
     /// next two points are the two corners making up the cone triangle
     pub fn corners(&self) -> [IVec2; 3] {
-        calc_triangle_points(self)
+        points_from_cone(self)
     }
 }
 
@@ -55,7 +52,7 @@ pub struct GridConeIter {
 
 impl GridConeIter {
     pub fn from_cone(cone: &GridCone) -> Self {
-        let points = calc_triangle_points(cone);
+        let points = points_from_cone(cone);
 
         let min = points.iter().cloned().reduce(|a, b| a.min(b)).unwrap();
         let max = points.iter().cloned().reduce(|a, b| a.max(b)).unwrap();
@@ -71,31 +68,6 @@ impl GridConeIter {
             width: d.x as usize,
             len,
         }
-    }
-}
-
-impl GridShape for GridCone {
-    fn iter(&self) -> super::GridShapeIterator {
-        GridShapeIterator::Cone(GridConeIter::from_cone(self))
-    }
-
-    fn pos(&self) -> IVec2 {
-        self.pos
-    }
-
-    fn set_pos(&mut self, pos: IVec2) {
-        self.pos = pos;
-    }
-
-    fn bounds(&self) -> GridRect {
-        let min = self
-            .corners()
-            .into_iter()
-            .reduce(|a, b| a.min(b))
-            .expect("Error getting corners from grid cone");
-        let max = self.corners().into_iter().reduce(|a, b| a.max(b)).unwrap();
-
-        GridRect::from_points(min, max)
     }
 }
 
@@ -154,10 +126,10 @@ fn point_in_triangle(pt: impl GridPoint, tri: &[IVec2; 3]) -> bool {
 }
 
 // https://www.reddit.com/r/roguelikedev/comments/6htorz/wondering_if_there_is_any_easy_cone_algorithm_out/
-fn calc_triangle_points(cone: &GridCone) -> [IVec2; 3] {
+fn points_from_cone(cone: &GridCone) -> [IVec2; 3] {
     let origin = cone.pos;
     let angle = cone.angle_dir_rad;
-    let size = cone.angle_size_rad;
+    let size = cone.angle_arc_rad;
     let dist = cone.range;
     let op = angle.sin() * dist as f32;
     let ad = angle.cos() * dist as f32;
@@ -168,13 +140,11 @@ fn calc_triangle_points(cone: &GridCone) -> [IVec2; 3] {
     let v = IVec2::new(-dir.y, dir.x).as_vec2();
     let scale = (size / 2.0).tan();
     let v = (v * scale).as_ivec2();
+
     let p1 = t + v;
     let p2 = t - v;
 
-    let edge1 = origin;
-    let edge2 = p1;
-    let edge3 = p2;
-    [edge1, edge2, edge3]
+    [origin, p1, p2]
 }
 
 #[cfg(test)]

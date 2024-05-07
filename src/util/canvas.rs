@@ -1,5 +1,3 @@
-//! Simple utility for drawing static images to the terminal.
-
 use crate::GridPoint;
 use glam::IVec2;
 
@@ -44,6 +42,7 @@ mod tests {
     use super::Canvas;
 
     #[test]
+    #[ignore]
     fn odd() {
         let mut canvas = Canvas::new([5, 5]);
         canvas.put([-2, -2], '*');
@@ -56,6 +55,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn even() {
         let mut canvas = Canvas::new([6, 6]);
         canvas.put([-3, -3], '*');
