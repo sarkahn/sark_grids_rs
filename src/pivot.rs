@@ -1,31 +1,36 @@
 //! A pivot point on a 2d grid.
 use std::ops::Sub;
 
+use enum_ordinalize::Ordinalize;
 use glam::{IVec2, Vec2};
 
 use crate::GridPoint;
 
-/// A pivot point on a 2d rect.
-#[derive(Eq, PartialEq, Clone, Copy, Debug)]
+use super::GridSize;
+
+/// A pivot on a 2d sized grid. Can be used to set positions relative to a given
+/// pivot. Each pivot has it's own coordinate space it uses to calculate
+/// the final adjusted position.
+#[derive(Eq, PartialEq, Clone, Copy, Debug, Ordinalize)]
 pub enum Pivot {
-    /// X axis increases to the right, Y axis increases downwards.
+    /// Coordinate space: X increases to the right, Y increases downwards.
     TopLeft,
-    /// X axis increases to the right, Y axis increases downwards.
+    /// Coordinate space: X increases to the right, Y increases downwards.
     TopCenter,
-    /// X axis increases to the left, Y axis increases downwards.
+    /// Coordinate space: X increases to the left, Y increases downwards.
     TopRight,
-    /// X axis increases to the right, Y axis increases upwards.
+    /// Coordinate space: X increases to the right, Y increases upwards.
     LeftCenter,
-    /// X axis increases to the right, Y axis increases upwards.
-    Center,
-    /// X axis increases to the left, Y axis increases upwards.
+    /// Coordinate space: X increases to the left, Y increases upwards.
     RightCenter,
-    /// X axis increases to the right, Y axis increases upwards.
+    /// Coordinate space: X increases to the right, Y increases upwards.
     BottomLeft,
-    /// X axis increases to the right, Y axis increases upwards.
+    /// Coordinate space: X increases to the right, Y increases upwards.
     BottomCenter,
-    /// X axis increases to the left, Y axis increases upwards.
+    /// Coordinate space: X increases to the left, Y increases upwards.
     BottomRight,
+    /// Coordinate space: X increases to the right, Y increases upwards.
+    Center,
 }
 
 impl Pivot {
@@ -46,9 +51,8 @@ impl Pivot {
         }
     }
 
-    /// The normalized value of this pivot, in the `[0.0, 0.0]..[1.0, 1.0]`
-    /// range, where `[0.0, 0.0]` is the bottom left and `[1.0, 1.0]` is the top
-    /// right.
+    /// The normalized value of this pivot in default coordinate space where
+    /// `[0.0, 0.0]` is the bottom left and `[1.0, 1.0]` is the top right.
     #[inline]
     pub fn normalized(&self) -> Vec2 {
         match self {
@@ -64,28 +68,16 @@ impl Pivot {
         }
     }
 
-    /// Transform a "world" grid position (bottom left origin) to it's equivalent
-    /// position from the perspective of this pivot.
-    ///
-    /// This assumes a world origin of `[0,0]`.
+    /// Transform a point into the pivot's coordinate space.
     #[inline]
-    pub fn transform_point(&self, point: impl GridPoint) -> IVec2 {
-        point.as_ivec2() * self.axis()
+    pub fn transform_point(&self, grid_point: impl GridPoint) -> IVec2 {
+        grid_point.to_ivec2() * self.axis()
     }
 
-    /// Transform a point from the perspective of this pivot back to it's
-    /// equivalent "world" grid position.
-    ///
-    /// This assumes a world origin of `[0,0]`.
+    /// Calculate the position of a pivot on a sized grid.
     #[inline]
-    pub fn inverse_transform_point(&self, point: impl GridPoint) -> IVec2 {
-        point.as_ivec2() * -self.axis()
-    }
-
-    /// Retrieve the pivot offset for a rect of the given size.
-    #[inline]
-    pub fn size_offset(&self, size: impl GridPoint) -> IVec2 {
-        (size.as_vec2().sub(1.0) * self.normalized())
+    pub fn pivot_position(&self, grid_size: impl GridSize) -> IVec2 {
+        (grid_size.to_vec2().sub(1.0) * self.normalized())
             .round()
             .as_ivec2()
     }
@@ -94,27 +86,36 @@ impl Pivot {
 /// A grid point that may optionally have a pivot applied to it.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct PivotedPoint {
-    point: IVec2,
-    pivot: Option<Pivot>,
+    pub point: IVec2,
+    pub pivot: Option<Pivot>,
 }
 
 impl PivotedPoint {
     pub fn new(xy: impl GridPoint, pivot: Pivot) -> Self {
         Self {
-            point: xy.as_ivec2(),
+            point: xy.to_ivec2(),
             pivot: Some(pivot),
         }
     }
 
-    /// Calculate the pivot adjusted position within a sized rect.
+    /// Calculate the final pivoted position on a sized grid.
     ///
-    /// If no pivot is applied, this will return the position.
-    #[inline]
-    pub fn calc_from_size(&self, size: impl GridPoint) -> IVec2 {
+    /// Transforms into the pivot's coordinate space if a pivot is applied,
+    /// returns the original point if no pivot is applied.
+    pub fn calculate(&self, grid_size: impl GridSize) -> IVec2 {
         if let Some(pivot) = self.pivot {
-            pivot.size_offset(size) + self.point * pivot.axis()
+            pivot.pivot_position(grid_size) + pivot.transform_point(self.point)
         } else {
             self.point
+        }
+    }
+
+    /// Returns a new PivotedPoint with this point's pivot or a default applied
+    /// to it if this point doesn't have one.
+    pub fn with_default_pivot(&self, default_pivot: Pivot) -> PivotedPoint {
+        Self {
+            point: self.point,
+            pivot: Some(self.pivot.unwrap_or(default_pivot)),
         }
     }
 }
@@ -122,7 +123,7 @@ impl PivotedPoint {
 impl<T: GridPoint> From<T> for PivotedPoint {
     fn from(value: T) -> Self {
         Self {
-            point: value.as_ivec2(),
+            point: value.to_ivec2(),
             pivot: None,
         }
     }
@@ -133,31 +134,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn size_offset() {
-        assert_eq!([4, 4], Pivot::TopRight.size_offset([5, 5]).to_array());
-        assert_eq!([2, 2], Pivot::Center.size_offset([5, 5]).to_array());
-        assert_eq!([3, 3], Pivot::TopRight.size_offset([4, 4]).to_array());
-        assert_eq!([2, 2], Pivot::Center.size_offset([4, 4]).to_array());
+    fn grid_pivot_size_offset() {
+        assert_eq!([4, 4], Pivot::TopRight.pivot_position([5, 5]).to_array());
+        assert_eq!([2, 2], Pivot::Center.pivot_position([5, 5]).to_array());
+        assert_eq!([3, 3], Pivot::TopRight.pivot_position([4, 4]).to_array());
+        assert_eq!([2, 2], Pivot::Center.pivot_position([4, 4]).to_array());
     }
 
     #[test]
     fn pivoted_point() {
         let pp = [1, 1].pivot(Pivot::TopLeft);
-        assert_eq!([1, 3], pp.calc_from_size([5, 5]).to_array());
+        assert_eq!([1, 3], pp.calculate([5, 5]).to_array());
 
         let pp = [1, 1].pivot(Pivot::TopRight);
-        assert_eq!([3, 3], pp.calc_from_size([5, 5]).to_array());
+        assert_eq!([3, 3], pp.calculate([5, 5]).to_array());
 
         let pp = [1, 1].pivot(Pivot::TopRight);
-        assert_eq!([4, 4], pp.calc_from_size([6, 6]).to_array());
+        assert_eq!([4, 4], pp.calculate([6, 6]).to_array());
 
         let pp = [1, 1].pivot(Pivot::Center);
-        assert_eq!([4, 4], pp.calc_from_size([6, 6]).to_array());
+        assert_eq!([4, 4], pp.calculate([6, 6]).to_array());
 
         let pp = [1, 1].pivot(Pivot::Center);
-        assert_eq!([3, 3], pp.calc_from_size([5, 5]).to_array());
+        assert_eq!([3, 3], pp.calculate([5, 5]).to_array());
 
         let pp = [0, 0].pivot(Pivot::BottomRight);
-        assert_eq!([8, 0], pp.calc_from_size([9, 9]).to_array());
+        assert_eq!([8, 0], pp.calculate([9, 9]).to_array());
     }
 }

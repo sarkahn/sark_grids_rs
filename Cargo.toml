@@ -11,4 +11,7 @@ keywords = ["2d", "grid", "geometry"]
 description = "A set of grids for storing and accessing data in a grid-like way."
 
 [dependencies]
-glam = "0.25"
+glam = "0.29"
+bit-vec = "0.6.3"
+fixedbitset = "0.5.7"
+enum-ordinalize = "4.3.0"

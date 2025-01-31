@@ -1,60 +1,48 @@
-use std::{
-    fmt::{self, Display},
-    ops::{Add, Deref, Sub},
-};
+use std::ops::Sub;
 
-use glam::IVec2;
+use glam::{ivec2, IVec2, UVec2};
 
 use super::GridShape;
-use crate::{GridPoint, Pivot};
+use crate::{GridPoint, GridSize, Pivot, PivotedPoint};
 
 /// A rectangle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridRect {
     /// The bottom-left most tile of the rect.
-    pub xy: IVec2,
-    pub size: IVec2,
+    pub pos: IVec2,
+    pub size: UVec2,
 }
 
 impl GridRect {
     /// Create a [GridRect] from a position (bottom left tile) and a size.
-    pub fn new(xy: impl Into<IVec2>, size: impl GridPoint) -> Self {
+    pub fn new(pos: impl GridPoint, size: impl GridSize) -> Self {
         GridRect {
-            xy: xy.into(),
-            size: size.as_ivec2(),
+            pos: pos.to_ivec2(),
+            size: size.to_uvec2(),
         }
     }
 
     /// Create a [GridRect] with it's center at origin (`[0,0]`).
-    pub fn center_origin(size: impl Into<IVec2>) -> Self {
+    pub fn center_origin(size: impl GridSize) -> Self {
         Self::from_center_size([0, 0], size)
     }
 
     /// Create a [GridRect] from two points in space.
-    pub fn from_points(a: impl Into<IVec2>, b: impl Into<IVec2>) -> Self {
-        let [a, b] = [a.into(), b.into()];
+    pub fn from_points(a: impl GridPoint, b: impl GridPoint) -> Self {
         let min = a.min(b);
         let max = a.max(b);
 
         let size = (max - min) + 1;
-        GridRect { xy: min, size }
+        GridRect {
+            pos: min,
+            size: size.as_uvec2(),
+        }
     }
 
     /// Create a [GridRect] from a center position and rect size.
-    pub fn from_center_size(center: impl Into<IVec2>, size: impl Into<IVec2>) -> Self {
-        let size = size.into();
-        let bl = center.into() - size.as_ivec2() / 2;
-        Self::new(bl, size)
-    }
-
-    /// Creates a [GridRect] from the given pivot position and size.
-    pub fn from_pivot_pos(pivot: Pivot, pos: impl Into<IVec2>, size: impl Into<IVec2>) -> Self {
-        let xy = pos.into();
-        let size = size.into();
-
-        let bl = xy - (size.sub(1).as_vec2() * pivot.normalized()).as_ivec2();
-        let tr = bl + size.sub(1);
-        Self::from_points(bl, tr)
+    pub fn from_center_size(center: impl GridPoint, size: impl GridSize) -> Self {
+        let bl = center.to_ivec2() - size.to_ivec2() / 2;
+        Self::new(bl, size.to_uvec2())
     }
 
     /// Returns a [GridRect] clipped by the bounds of the given [GridRect]
@@ -67,26 +55,41 @@ impl GridRect {
     }
 
     /// Returns a [GridRect] with it's position adjusted by the given amount
-    pub fn translated(&self, xy: impl Into<IVec2>) -> GridRect {
-        GridRect::new(xy, self.size)
+    pub fn translated(&self, pos: impl GridPoint) -> GridRect {
+        GridRect::new(self.pos + pos.to_ivec2(), self.size)
     }
 
-    /// Returns a [GridRect] of the same size, adjusted to the given pivot.
-    pub fn pivoted(&self, pivot: Pivot) -> GridRect {
-        Self::from_pivot_pos(pivot, self.xy, self.size)
+    /// Returns a [GridRect] with each side adjusted by the given delta.
+    pub fn resized(&self, delta: impl GridPoint) -> GridRect {
+        GridRect::from_points(self.min() - delta.to_ivec2(), self.max() + delta.to_ivec2())
+    }
+
+    /// Resizes the rect along a given pivot point.
+    pub fn resize_from_pivot(&mut self, pivot: Pivot, amount: i32) {
+        let p = match pivot {
+            Pivot::TopLeft => self.top_left() + ivec2(-1, 1) * amount,
+            Pivot::TopCenter => self.top_left() + ivec2(0, 1) * amount,
+            Pivot::TopRight => self.top_right() + ivec2(1, 1) * amount,
+            Pivot::LeftCenter => self.top_left() + ivec2(-1, 0) * amount,
+            Pivot::RightCenter => self.top_right() + ivec2(1, 0) * amount,
+            Pivot::BottomLeft => self.bottom_left() + ivec2(-1, -1) * amount,
+            Pivot::BottomCenter => self.bottom_left() + ivec2(0, -1) * amount,
+            Pivot::BottomRight => self.bottom_right() + ivec2(1, -1) * amount,
+            Pivot::Center => self.center(),
+        };
+        self.envelope_point(p);
     }
 
     /// Returns a [GridRect] with both rects contained in it.
     pub fn merged(&self, mut other: GridRect) -> GridRect {
-        let [min, max] = [self.min(), self.max()];
-        other.envelope_point(min);
-        other.envelope_point(max);
+        other.envelope_point(self.min());
+        other.envelope_point(self.max());
         other
     }
 
     /// Adjusts a single corner of the rect to contain the given point.
-    pub fn envelope_point(&mut self, point: impl Into<IVec2>) {
-        let point = point.into();
+    pub fn envelope_point(&mut self, point: impl GridPoint) {
+        let point = point.to_ivec2();
         let min = self.min().min(point);
         let max = self.max().max(point);
         *self = GridRect::from_points(min, max);
@@ -99,29 +102,49 @@ impl GridRect {
         self.envelope_point(max);
     }
 
-    /// The center tile of the rect.
+    /// The center position of the rect.
     pub fn center(&self) -> IVec2 {
-        self.xy + self.size / 2
+        self.pos + self.size.as_ivec2() / 2
     }
 
-    /// The bottom-left tile of the rect.
-    pub fn bottom_left(&self) -> IVec2 {
-        self.xy
+    /// The y position of the top row of the rect.
+    pub fn top(&self) -> i32 {
+        self.max().y
     }
 
-    /// The top left tile of the rect.
+    /// The y position of the bottom row of the rect.
+    pub fn bottom(&self) -> i32 {
+        self.min().y
+    }
+
+    /// The x position of the left column of the rect.
+    pub fn left(&self) -> i32 {
+        self.min().x
+    }
+
+    /// The x position of the right column of the rect.
+    pub fn right(&self) -> i32 {
+        self.max().x
+    }
+
+    /// The 2d position of the top left tile of the rect.
     pub fn top_left(&self) -> IVec2 {
-        self.xy + IVec2::Y * self.size.y.sub(1)
+        [self.left(), self.top()].into()
     }
 
-    /// The top right tile of the rect.
+    /// The 2d position of the top right tile of the rect.
     pub fn top_right(&self) -> IVec2 {
         self.max()
     }
 
-    /// The bottom right tile of the rect.
+    /// The 2d position of the bottom left tile of the rect.
+    pub fn bottom_left(&self) -> IVec2 {
+        self.pos
+    }
+
+    /// The 2d position of the bottom right tile of the rect.
     pub fn bottom_right(&self) -> IVec2 {
-        self.xy + IVec2::X * self.size.x.sub(1)
+        [self.right(), self.bottom()].into()
     }
 
     pub fn width(&self) -> usize {
@@ -134,19 +157,19 @@ impl GridRect {
 
     /// Bottom left position of the rect.
     pub fn min(&self) -> IVec2 {
-        self.xy
+        self.pos
     }
 
     /// Top right position of the rect.
     pub fn max(&self) -> IVec2 {
-        self.xy + self.size.sub(1)
+        self.pos + self.size.as_ivec2().sub(1)
     }
 
     /// Index of the bottom row of the rect.
     ///
     /// The "index" is independent of the rect's position and goes from
     /// `0` to `size-1`.
-    pub fn bottom(&self) -> usize {
+    pub fn bottom_index(&self) -> usize {
         0
     }
 
@@ -154,7 +177,7 @@ impl GridRect {
     ///
     /// The "index" is independent of the rect's position and goes from
     /// `0` to `size-1`.
-    pub fn top(&self) -> usize {
+    pub fn top_index(&self) -> usize {
         self.height().sub(1)
     }
 
@@ -162,7 +185,7 @@ impl GridRect {
     ///
     /// The "index" is independent of the rect's position and goes from
     /// `0` to `size-1`.
-    pub fn left(&self) -> usize {
+    pub fn left_index(&self) -> usize {
         0
     }
 
@@ -170,49 +193,44 @@ impl GridRect {
     ///
     /// The "index" is independent of the rect's position and goes from
     /// `0` to `size-1`.
-    pub fn right(&self) -> usize {
+    pub fn right_index(&self) -> usize {
         self.width().sub(1)
     }
 
-    /// Returns the 4 corners of the rect, which can be accessed by index
-    /// or name.
-    ///
-    /// Order is BottomLeft, TopLeft, TopRight, BottomRight
-    #[inline]
-    pub fn corners(&self) -> Corners {
-        let [min, max] = [self.min(), self.max()];
-        Corners([min, [min.x, max.y].into(), max, [max.x, min.y].into()])
-    }
-
     /// Iterate over each point of the rect.
-    pub fn iter(&self) -> GridRectIter {
+    pub fn iter_points(&self) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
         GridRectIter::new(*self)
     }
 
-    /// Iterate over a single column of the rect.
-    pub fn iter_col(
+    /// Iterate over the tile positions of a single column of the rect.
+    pub fn iter_column(
         &self,
         col: usize,
     ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
-        self.iter().skip(col).step_by(self.width())
+        self.iter_points().skip(col).step_by(self.width())
     }
 
-    /// Iterate iver a single row of the rect.
+    /// Iterate over the tile positions of a single row of the rect.
     pub fn iter_row(
         &self,
         row: usize,
     ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
-        self.iter().skip(row * self.width()).take(self.width())
+        self.iter_points()
+            .skip(row * self.width())
+            .take(self.width())
     }
 
-    /// Iterate over all the border tiles of the rect in clockwise order,
-    /// starting from the bottom left.
+    /// Iterate over all the tile positions of the border of the rect in clockwise
+    /// order, starting from the bottom left.
     pub fn iter_border(&self) -> impl DoubleEndedIterator<Item = IVec2> {
-        let left = self.iter_col(0);
-        let top = self.iter_row(self.top()).skip(1).take(self.width().sub(2));
-        let right = self.iter_col(self.right()).rev();
+        let left = self.iter_column(0);
+        let top = self
+            .iter_row(self.top_index())
+            .skip(1)
+            .take(self.width().sub(2));
+        let right = self.iter_column(self.right_index()).rev();
         let bottom = self
-            .iter_row(self.bottom())
+            .iter_row(self.bottom_index())
             .rev()
             .skip(1)
             .take(self.width().sub(2));
@@ -221,7 +239,7 @@ impl GridRect {
 
     /// Retrieve the position of the tile at the given pivot point on the rect.
     pub fn pivot_point(&self, pivot: Pivot) -> IVec2 {
-        self.bottom_left() + pivot.size_offset(self.size)
+        self.bottom_left() + pivot.pivot_position(self.size)
     }
 
     /// Retrieve a point in the rect from the perspective of the given pivot.
@@ -232,35 +250,44 @@ impl GridRect {
 
     /// Check if a given point lies inside the rect
     #[inline]
-    pub fn contains(&self, p: impl Into<IVec2>) -> bool {
-        let p = p.into();
+    pub fn contains_point(&self, p: impl GridPoint) -> bool {
+        let p = p.to_ivec2();
         !(p.cmplt(self.min()).any() || p.cmpgt(self.max()).any())
     }
 
     /// Returns true if the given rect is entirely contained within this one.
     #[inline]
-    pub fn contains_rect(&self, rect: GridRect) -> bool {
-        let [amin, amax] = [self.min(), self.max()];
-        let [bmin, bmax] = [rect.min(), rect.max()];
-        bmin.cmpge(amin).all() && bmax.cmple(amax).all()
+    pub fn contains_rect(&self, other: GridRect) -> bool {
+        other.min().cmpge(self.min()).all() && other.max().cmple(self.max()).all()
     }
 
     /// Check if any part of a rect overlaps another.
     #[inline]
-    pub fn overlaps(&self, other: GridRect) -> bool {
-        let ac = self.center().as_vec2();
-        let bc = other.center().as_vec2();
-        let ae = self.size.as_vec2() / 2.0;
-        let be = other.size.as_vec2() / 2.0;
-
-        ac.sub(bc).abs().cmple(ae.add(be)).all()
+    pub fn overlaps_rect(&self, other: GridRect) -> bool {
+        self.left() <= other.right()
+            && other.left() <= self.right()
+            && self.bottom() <= other.top()
+            && other.bottom() <= self.top()
     }
 }
 
+impl SizedGrid for GridRect {
+    fn size(&self) -> glam::UVec2 {
+        self.size
+    }
+}
+
+impl PositionedGrid for GridRect {
+    fn pos(&self) -> IVec2 {
+        self.pos
+    }
+}
+
+/// An iterator over the 2d grid points of a [GridRect].
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridRectIter {
     origin: IVec2,
-    size: IVec2,
+    size: UVec2,
     head: IVec2,
     tail: IVec2,
 }
@@ -268,11 +295,15 @@ pub struct GridRectIter {
 impl GridRectIter {
     pub fn new(rect: GridRect) -> Self {
         Self {
-            origin: rect.xy,
+            origin: rect.pos,
             size: rect.size,
             head: IVec2::ZERO,
-            tail: rect.size.sub(1),
+            tail: rect.size.as_ivec2().sub(1),
         }
+    }
+
+    pub fn can_iterate(&self) -> bool {
+        self.head.y < self.tail.y || (self.head.y == self.tail.y && self.head.x <= self.tail.x)
     }
 }
 
@@ -280,38 +311,38 @@ impl Iterator for GridRectIter {
     type Item = IVec2;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let size = self.size;
-        let head = &mut self.head;
-        let tail = self.tail;
-
-        if head.y > tail.y || (head.y == tail.y && head.x > tail.x) {
-            None
-        } else {
-            let ret = self.origin + *head;
-            head.x += 1;
-            if head.x >= size.x {
-                head.x = 0;
-                head.y += 1;
-            }
-
-            Some(ret)
+        if !self.can_iterate() {
+            return None;
         }
+        let size = self.size.as_ivec2();
+        let head = &mut self.head;
+
+        let ret = self.origin + *head;
+        head.x += 1;
+        if head.x >= size.x {
+            head.x = 0;
+            head.y += 1;
+        }
+
+        Some(ret)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let size = self.size;
-        let head = self.head;
-        let tail = size.sub(1) - self.tail;
-        let head_count = size.x * head.y + head.x;
-        let tail_count = size.x * tail.y + tail.x;
-        let rem = (size.x * size.y - (head_count + tail_count)) as usize;
-        (rem, Some(rem))
+        if !self.can_iterate() {
+            return (0, Some(0));
+        }
+        let count = self
+            .tail
+            .as_index(self.size)
+            .saturating_sub(self.head.as_index(self.size))
+            + 1;
+        (count, Some(count))
     }
 }
 
 impl DoubleEndedIterator for GridRectIter {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let size = self.size;
+        let size = self.size.as_ivec2();
         let tail = &mut self.tail;
         let head = self.head;
 
@@ -342,8 +373,8 @@ impl IntoIterator for GridRect {
     }
 }
 
-impl Display for GridRect {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl std::fmt::Display for GridRect {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "GridRect {{
@@ -359,43 +390,43 @@ impl Display for GridRect {
     }
 }
 
-/// The corner points of a [GridRect]. Corners can be accessed by name, index,
-/// or iterated over.
-#[derive(Default, Debug, Clone, Copy)]
-pub struct Corners(pub [IVec2; 4]);
+// /// The corner points of a [GridRect]. Corners can be accessed by name, index,
+// /// or iterated over.
+// #[derive(Default, Debug, Clone, Copy)]
+// pub struct Corners(pub [IVec2; 4]);
 
-impl Corners {
-    pub fn bl(&self) -> IVec2 {
-        self.0[0]
-    }
-    pub fn tl(&self) -> IVec2 {
-        self.0[1]
-    }
-    pub fn tr(&self) -> IVec2 {
-        self.0[2]
-    }
-    pub fn br(&self) -> IVec2 {
-        self.0[3]
-    }
-}
+// impl Corners {
+//     pub fn bottom_left(&self) -> IVec2 {
+//         self.0[0]
+//     }
+//     pub fn top_left(&self) -> IVec2 {
+//         self.0[1]
+//     }
+//     pub fn top_right(&self) -> IVec2 {
+//         self.0[2]
+//     }
+//     pub fn bottom_right(&self) -> IVec2 {
+//         self.0[3]
+//     }
+// }
 
-impl Deref for Corners {
-    type Target = [IVec2; 4];
+// impl Deref for Corners {
+//     type Target = [IVec2; 4];
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
 
-impl IntoIterator for Corners {
-    type Item = IVec2;
+// impl IntoIterator for Corners {
+//     type Item = IVec2;
 
-    type IntoIter = core::array::IntoIter<IVec2, 4>;
+//     type IntoIter = core::array::IntoIter<IVec2, 4>;
 
-    fn into_iter(self) -> Self::IntoIter {
-        self.0.into_iter()
-    }
-}
+//     fn into_iter(self) -> Self::IntoIter {
+//         self.0.into_iter()
+//     }
+// }
 
 impl GridShape for GridRect {
     fn iter(&self) -> super::GridShapeIterator {
@@ -403,21 +434,256 @@ impl GridShape for GridRect {
     }
 
     fn pos(&self) -> IVec2 {
-        self.xy
+        self.pos
     }
 
     fn set_pos(&mut self, pos: IVec2) {
-        self.xy = pos;
+        self.pos = pos;
     }
 
-    fn rect(&self) -> GridRect {
+    fn bounds(&self) -> GridRect {
         *self
+    }
+}
+
+/// A rectangular grid with a defined size.
+pub trait SizedGrid {
+    fn size(&self) -> UVec2;
+
+    fn width(&self) -> usize {
+        self.size().x as usize
+    }
+
+    fn height(&self) -> usize {
+        self.size().y as usize
+    }
+
+    fn tile_count(&self) -> usize {
+        self.width() * self.height()
+    }
+
+    fn in_bounds(&self, p: impl Into<PivotedPoint>) -> bool {
+        let p: IVec2 = p.into().calculate(self.size());
+        p.cmpge(IVec2::ZERO).all() && p.cmplt(self.size().as_ivec2()).all()
+    }
+
+    /// Transform a local 2d grid position to a 1d array index.
+    #[inline]
+    fn transform_lti(&self, pos: impl Into<PivotedPoint>) -> usize {
+        let pos: IVec2 = pos.into().calculate(self.size());
+        debug_assert!(
+            self.in_bounds(pos),
+            "Attempting to create 1d index from out of bounds position {} in grid sized {}",
+            pos,
+            self.size()
+        );
+        pos.as_index(self.size())
+    }
+
+    /// Transform an 1d array index to a local 2d grid position.
+    fn transform_itl(&self, i: usize) -> IVec2 {
+        let x = i % self.width();
+        let y = i / self.width();
+        IVec2::new(x as i32, y as i32)
+    }
+
+    /// Attempt to transform a 2d grid position to a 1d array index, returning
+    /// [None] if the position is out of bounds.
+    fn try_transform_lti(&self, pos: impl Into<PivotedPoint>) -> Option<usize> {
+        let pos: IVec2 = pos.into().calculate(self.size());
+        pos.get_index(self.size())
+    }
+
+    /// Attempt to transform an 1d array index to a local 2d grid position.
+    /// Returns [None] if the index is out of bounds.
+    fn try_transform_itl(&self, i: usize) -> Option<IVec2> {
+        if i >= self.tile_count() {
+            return None;
+        }
+        let x = i % self.width();
+        let y = i / self.width();
+        Some(IVec2::new(x as i32, y as i32))
+    }
+
+    /// Index of the bottom row of the rect.
+    ///
+    /// The "index" is independent of the rect's position and goes from
+    /// `0` to `size-1`.
+    fn bottom_index(&self) -> usize {
+        0
+    }
+
+    /// Index of the top row of the rect.
+    ///
+    /// The "index" is independent of the rect's position and goes from
+    /// `0` to `size-1`.
+    fn top_index(&self) -> usize {
+        self.height().sub(1)
+    }
+
+    /// Index of the left column of the rect.
+    ///
+    /// The "index" is independent of the rect's position and goes from
+    /// `0` to `size-1`.
+    fn left_index(&self) -> usize {
+        0
+    }
+
+    /// The index of the right most column of the rect.
+    ///
+    /// The "index" is independent of the rect's position and goes from
+    /// `0` to `size-1`.
+    fn right_index(&self) -> usize {
+        self.width().sub(1)
+    }
+
+    fn grid_bounds(&self) -> GridRect {
+        GridRect::new([0, 0], self.size())
+    }
+
+    fn iter_grid_points(&self) -> GridRectIter {
+        GridRectIter::new(self.grid_bounds())
+    }
+}
+
+/// A rectangular grid with a defined size and world position.
+pub trait PositionedGrid: SizedGrid {
+    /// The position (bottom-left tile) of the grid in world space.
+    fn pos(&self) -> IVec2;
+
+    /// The center tile of the grid.
+    fn center(&self) -> IVec2 {
+        self.pos() + self.size().as_ivec2() / 2
+    }
+
+    /// The x position of the right-most grid column.
+    fn right(&self) -> i32 {
+        self.pos().x + self.width() as i32 - 1
+    }
+
+    /// The y position of the top grid row.
+    fn top(&self) -> i32 {
+        self.pos().y + self.height() as i32 - 1
+    }
+
+    /// The x position of the left-most grid column.
+    fn left(&self) -> i32 {
+        self.pos().x
+    }
+
+    /// The y position of the bottom grid row.
+    fn bottom(&self) -> i32 {
+        self.pos().y
+    }
+
+    /// The grid position of the top-left grid tile.
+    fn top_left(&self) -> IVec2 {
+        IVec2::new(self.left(), self.top())
+    }
+
+    /// The grid position of the top-right grid tile.
+    fn top_right(&self) -> IVec2 {
+        IVec2::new(self.right(), self.top())
+    }
+
+    /// The grid position of the bottom-left grid tile.
+    fn bottom_left(&self) -> IVec2 {
+        IVec2::new(self.left(), self.bottom())
+    }
+
+    /// The grid position of the bottom-right grid tile.
+    fn bottom_right(&self) -> IVec2 {
+        IVec2::new(self.right(), self.bottom())
+    }
+
+    /// The grid position of the bottom-left grid tile.
+    fn min(&self) -> IVec2 {
+        self.pos()
+    }
+
+    /// The grid position of the top-right grid tile.
+    fn max(&self) -> IVec2 {
+        self.pos() + self.size().as_ivec2() - 1
+    }
+
+    fn contains_point(&self, p: impl GridPoint) -> bool {
+        let p = p.to_ivec2();
+        !(p.cmplt(self.min()).any() || p.cmpgt(self.max()).any())
+    }
+
+    /// Check if another [PositionedGrid] is entirely contained within this one.
+    fn contains_rect(&self, other: impl PositionedGrid) -> bool {
+        other.min().cmpge(self.min()).all() && other.max().cmple(self.max()).all()
+    }
+
+    /// Check if any tile of this [PositionedGrid] overlaps with another.
+    fn overlaps(&self, other: impl PositionedGrid) -> bool {
+        self.left() <= other.right()
+            && other.left() <= self.right()
+            && self.bottom() <= other.top()
+            && other.bottom() <= self.top()
+    }
+
+    /// Iterate over each point of the [GridRect].
+    fn iter_rect_points(&self) -> GridRectIter {
+        GridRectIter::new(GridRect::new(self.pos(), self.size()))
+    }
+
+    /// Iterate over the grid points of a single column of the rect.
+    fn iter_rect_column(
+        &self,
+        col: usize,
+    ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
+        self.iter_grid_points().skip(col).step_by(self.width())
+    }
+
+    /// Iterate over a the grid points of single row.
+    fn iter_rect_row(
+        &self,
+        row: usize,
+    ) -> impl DoubleEndedIterator<Item = IVec2> + ExactSizeIterator {
+        self.iter_grid_points()
+            .skip(row * self.width())
+            .take(self.width())
+    }
+
+    /// Iterate over all the border tiles of the grid in clockwise order,
+    /// starting from the bottom left.
+    fn iter_rect_border(&self) -> impl DoubleEndedIterator<Item = IVec2> {
+        let left = self.iter_rect_column(0);
+        let top = self
+            .iter_rect_row(self.top_index())
+            .skip(1)
+            .take(self.width().sub(2));
+        let right = self.iter_rect_column(self.right_index()).rev();
+        let bottom = self
+            .iter_rect_row(self.bottom_index())
+            .rev()
+            .skip(1)
+            .take(self.width().sub(2));
+        left.chain(top).chain(right).chain(bottom)
+    }
+
+    /// Retrieve the position of the tile at the given pivot point on the grid.
+    fn pivot_point(&self, pivot: Pivot) -> IVec2 {
+        self.bottom_left() + pivot.pivot_position(self.size())
+    }
+
+    /// Retrieve a point in the grid from the perspective of the given pivot.
+    fn pivoted_point(&self, pivot: Pivot, point: impl GridPoint) -> IVec2 {
+        let origin = self.pivot_point(pivot);
+        origin + (point.to_ivec2() * pivot.axis())
+    }
+
+    /// Transform a world point to this grid's local coordinates
+    fn transform_wtl(&self, pos: impl GridPoint) -> IVec2 {
+        pos.to_ivec2() - self.min()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{util::Canvas, Pivot};
+    use crate::{geometry::grid_rect::PositionedGrid, util::Canvas, Pivot};
 
     use super::GridRect;
 
@@ -447,10 +713,10 @@ mod tests {
     #[test]
     fn contains_point() {
         let rect = GridRect::center_origin([5, 5]);
-        assert!(rect.contains([-2, -2]));
-        assert!(rect.contains([2, 2]));
-        assert!(!rect.contains([3, 3]));
-        assert!(!rect.contains([-3, -3]));
+        assert!(rect.contains_point([-2, -2]));
+        assert!(rect.contains_point([2, 2]));
+        assert!(!rect.contains_point([3, 3]));
+        assert!(!rect.contains_point([-3, -3]));
     }
 
     #[test]
@@ -490,17 +756,6 @@ mod tests {
         assert!(a.overlaps(a));
         assert!(b.overlaps(b));
         assert!(c.overlaps(c));
-    }
-
-    #[test]
-    #[ignore]
-    fn iter() {
-        let rect = GridRect::center_origin([3, 3]);
-        let mut canvas = Canvas::new([5, 5]);
-        for p in rect {
-            canvas.put(p, '*');
-        }
-        canvas.print();
     }
 
     #[test]
@@ -545,7 +800,7 @@ mod tests {
     }
 
     #[test]
-    fn corners() {
+    fn pivot_corners() {
         let rect = GridRect::from_points([0, 0], [5, 5]);
         assert_eq!([0, 0], rect.pivot_point(Pivot::BottomLeft).to_array());
         assert_eq!([0, 5], rect.pivot_point(Pivot::TopLeft).to_array());
@@ -571,56 +826,47 @@ mod tests {
         assert_eq!([5, -4], rect.pivot_point(Pivot::BottomRight).to_array());
     }
 
-    #[test]
-    fn iter_border() {
-        let rect = GridRect::from_points([0, 0], [5, 5]);
-        let points: Vec<_> = rect.iter_border().collect();
-
-        let mut corners = rect.corners().into_iter();
-        assert!(corners.all(|p| points.contains(&p)));
-        assert_eq!(20, rect.iter_border().count());
-
-        let rect = GridRect::from_points([-13, -13], [-9, -9]);
-        let points: Vec<_> = rect.iter_border().collect();
-
-        let mut corners = rect.corners().into_iter();
-        assert!(corners.all(|p| points.contains(&p)));
-        assert_eq!(16, rect.iter_border().count());
-    }
-
-    #[test]
-    #[ignore]
-    fn pivot_corner_draw_bl_tr() {
-        let mut canvas = Canvas::new([12, 12]);
-        let a = GridRect::from_pivot_pos(Pivot::BottomLeft, [0, 0], [5, 5]);
-        let b = GridRect::from_pivot_pos(Pivot::TopRight, [0, 0], [5, 5]);
-        // let a = GridRect::center_origin([5, 5]).pivoted(Pivot::BottomLeft);
-        // let b = GridRect::center_origin([5, 5]).pivoted(Pivot::TopRight);
-        for p in a.into_iter().chain(b) {
-            canvas.put(p, '*');
-        }
-        canvas.print();
-    }
-
     // #[test]
-    // #[ignore]
-    // fn pivot_corner_draw_tl_br() {
-    //     let mut canvas = Canvas::new([12, 12]);
-    //     let a = GridRect::center_origin([5, 5]).pivoted(Pivot::TopLeft);
-    //     let b = GridRect::center_origin([5, 5]).pivoted(Pivot::BottomRight);
-    //     for p in a.into_iter().chain(b) {
-    //         canvas.put(p, '*');
-    //     }
-    //     canvas.print();
+    // fn iter_border() {
+    //     let rect = GridRect::from_points([0, 0], [5, 5]);
+    //     let points: Vec<_> = rect.iter_rect_border().collect();
+
+    //     let mut corners = rect.corners().into_iter();
+    //     assert!(corners.all(|p| points.contains(&p)));
+    //     assert_eq!(20, rect.iter_rect_border().count());
+
+    //     let rect = GridRect::from_points([-13, -13], [-9, -9]);
+    //     let points: Vec<_> = rect.iter_rect_border().collect();
+
+    //     let mut corners = rect.corners().into_iter();
+    //     assert!(corners.all(|p| points.contains(&p)));
+    //     assert_eq!(16, rect.iter_rect_border().count());
     // }
 
     // #[test]
-    // fn clipped() {
-    //     let a = GridRect::from_points([5, 5], [10, 10]);
-    //     let b = GridRect::new([7, 7], [30, 2]);
-    //     let b = b.clipped(a);
-
-    //     assert_eq!(a.min_i().x, b.min_i().x);
-    //     assert_eq!(a.max_i().x, b.max_i().x);
+    // fn pivot_doesnt_overlap() {
+    //     let a = GridRect::from_pivot_point([5, 5], Pivot::TopRight);
+    //     let rects = [
+    //         GridRect::from_pivot_origin([3, 3], Pivot::BottomLeft),
+    //         GridRect::from_pivot_origin([7, 7], Pivot::BottomRight),
+    //         GridRect::from_pivot_origin([2, 2], Pivot::TopLeft),
+    //     ];
+    //     let overlap = rects.iter().any(|r| r.overlaps(a));
+    //     assert!(!overlap);
     // }
+
+    #[test]
+    fn clipped() {
+        let a = GridRect::from_points([4, 5], [10, 13]);
+        let b = GridRect::from_points([9, 10], [13, 15]);
+        let c = GridRect::from_points([1, 2], [7, 10]);
+
+        let clipped = b.clipped(a);
+        assert_eq!([9, 10], clipped.min().to_array());
+        assert_eq!([10, 13], clipped.max().to_array());
+
+        let clipped = a.clipped(c);
+        assert_eq!([4, 5], clipped.min().to_array());
+        assert_eq!([7, 10], clipped.max().to_array());
+    }
 }

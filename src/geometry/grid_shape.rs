@@ -17,10 +17,10 @@ pub trait GridShape: ShapeClone + Sync + Send + 'static {
     fn iter(&self) -> GridShapeIterator;
     /// The position of the grid shape.
     fn pos(&self) -> IVec2;
-    /// Set the position of the grid shape.
+    /// Set the position of the grid shape without changing it's size.
     fn set_pos(&mut self, pos: IVec2);
     /// Get a rect encompassing the entire shape.
-    fn rect(&self) -> GridRect;
+    fn bounds(&self) -> GridRect;
 }
 
 #[derive(Debug, Clone)]

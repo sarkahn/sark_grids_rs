@@ -1,17 +1,17 @@
-use crate::GridPoint;
-use glam::IVec2;
+use crate::{GridPoint, GridShape, GridSize};
+use glam::UVec2;
 
 pub struct Canvas {
-    size: IVec2,
+    size: UVec2,
     string: String,
 }
 
 impl Canvas {
-    pub fn new(size: impl GridPoint) -> Canvas {
-        let string = str::repeat(" ", size.len());
+    pub fn new(size: impl GridSize) -> Canvas {
+        let string = str::repeat(".", size.tile_count());
 
         Canvas {
-            size: size.as_ivec2(),
+            size: size.to_uvec2(),
             string,
         }
     }
@@ -23,17 +23,25 @@ impl Canvas {
     }
 
     fn to_index(&self, point: impl GridPoint) -> usize {
-        let p = point.as_ivec2() + self.size / 2;
-        let [x, y] = p.to_array();
-        //println!("XY {}, {}, W {}", x, y, self.size.x);
-        y as usize * self.size.x as usize + x as usize
+        let p = point.to_ivec2() + self.size.as_ivec2() / 2;
+        p.as_index(self.size)
     }
 
     pub fn print(&self) {
-        let chars: Vec<_> = self.string.replace(' ', ".").chars().collect();
+        let chars: Vec<_> = self.string.chars().collect();
         for line in chars.chunks(self.size.x as usize).rev() {
             println!("{}", String::from_iter(line.iter()));
         }
+    }
+
+    pub fn put_shape(&mut self, shape: impl GridShape, glyph: char) {
+        for p in shape.iter() {
+            self.put(p, glyph);
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.string = str::repeat(".", self.size.tile_count());
     }
 }
 

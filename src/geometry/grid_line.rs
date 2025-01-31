@@ -18,8 +18,8 @@ impl GridLine {
     /// the final point on the line.
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
         GridLine {
-            start: start.as_ivec2(),
-            end: end.as_ivec2(),
+            start: start.to_ivec2(),
+            end: end.to_ivec2(),
         }
     }
 
@@ -49,7 +49,7 @@ impl GridShape for GridLine {
         self.end = self.start + v;
     }
 
-    fn rect(&self) -> super::GridRect {
+    fn bounds(&self) -> super::GridRect {
         let min = self.start.min(self.end);
         let max = self.start.max(self.end);
         GridRect::from_points(min, max)
@@ -66,8 +66,8 @@ pub struct GridLineIter {
 
 impl GridLineIter {
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
-        let start = start.as_ivec2();
-        let end = end.as_ivec2();
+        let start = start.to_ivec2();
+        let end = end.to_ivec2();
         GridLineIter {
             start,
             end,
@@ -131,8 +131,8 @@ impl GridLineOrtho {
     /// the final point on the line.
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
         Self {
-            start: start.as_ivec2(),
-            end: end.as_ivec2(),
+            start: start.to_ivec2(),
+            end: end.to_ivec2(),
         }
     }
 
@@ -157,7 +157,7 @@ impl GridShape for GridLineOrtho {
         self.end = self.start + v;
     }
 
-    fn rect(&self) -> super::GridRect {
+    fn bounds(&self) -> super::GridRect {
         let min = self.start.min(self.end);
         let max = self.start.max(self.end);
         GridRect::from_points(min, max)
@@ -174,8 +174,8 @@ pub struct GridLineOrthoIter {
 
 impl GridLineOrthoIter {
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> GridLineOrthoIter {
-        let end = end.as_ivec2();
-        let start = start.as_ivec2();
+        let end = end.to_ivec2();
+        let start = start.to_ivec2();
         let d = end - start;
         let n = d.abs();
         let sign = d.signum();
@@ -255,7 +255,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn line_orthogonal() {
+    fn line_ortho_x() {
         let mut canvas = Canvas::new([11, 11]);
         let lines = [
             GridLineOrtho::new([0, 0], [4, 4]),
@@ -263,8 +263,8 @@ mod tests {
             GridLineOrtho::new([0, 0], [-4, -4]),
             GridLineOrtho::new([0, 0], [4, -4]),
         ];
-        for p in lines.iter().flat_map(|l| l.iter()) {
-            canvas.put(p, '*');
+        for line in lines {
+            canvas.put_shape(line, '*');
         }
         canvas.print();
     }

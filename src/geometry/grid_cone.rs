@@ -20,7 +20,7 @@ impl GridCone {
     /// straight up (angle increases counter-clockwise).
     pub fn new(xy: impl GridPoint, dir_deg: f32, arc_deg: f32, range: usize) -> Self {
         Self {
-            pos: xy.as_ivec2(),
+            pos: xy.to_ivec2(),
             angle_dir_rad: dir_deg.to_radians(),
             angle_arc_rad: arc_deg.to_radians(),
             range,
@@ -111,7 +111,7 @@ fn sign(p1: IVec2, p2: IVec2, p3: IVec2) -> i32 {
 // https://stackoverflow.com/a/2049593
 #[inline]
 fn point_in_triangle(pt: impl GridPoint, tri: &[IVec2; 3]) -> bool {
-    let pt = pt.as_ivec2();
+    let pt = pt.to_ivec2();
     let (d1, d2, d3);
     let (has_neg, has_pos);
 
@@ -149,12 +149,14 @@ fn points_from_cone(cone: &GridCone) -> [IVec2; 3] {
 
 #[cfg(test)]
 mod test {
+    use glam::UVec2;
+
     use super::*;
     use crate::util::Canvas;
 
     #[test]
     fn perp() {
-        let size = IVec2::new(20, 20);
+        let size = UVec2::new(20, 20);
         let mut canvas = Canvas::new(size + 1);
 
         let arc = 85.;
@@ -181,7 +183,7 @@ mod test {
 
     #[test]
     fn diag() {
-        let size = IVec2::new(11, 11);
+        let size = UVec2::new(11, 11);
         let mut canvas = Canvas::new(size + 1);
 
         let arc = 45.;
