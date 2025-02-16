@@ -22,6 +22,12 @@ impl Canvas {
             .replace_range(i..i + 1, std::str::from_utf8(&[glyph as u8]).unwrap());
     }
 
+    pub fn put_bl(&mut self, pos: impl GridPoint, glyph: char) {
+        let i = self.to_index(pos.to_ivec2() - self.size.as_ivec2() / 2);
+        self.string
+            .replace_range(i..i + 1, std::str::from_utf8(&[glyph as u8]).unwrap());
+    }
+
     fn to_index(&self, point: impl GridPoint) -> usize {
         let p = point.to_ivec2() + self.size.as_ivec2() / 2;
         p.as_index(self.size)

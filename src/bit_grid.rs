@@ -35,12 +35,12 @@ impl BitGrid {
     #[inline]
     pub fn get(&self, xy: impl GridPoint) -> bool {
         let i = self.transform_lti(xy);
-        self.get_index(i)
+        self.value_from_index(i)
     }
 
     /// Retrieve the value of the bit at the given index.
     #[inline]
-    pub fn get_index(&self, i: usize) -> bool {
+    pub fn value_from_index(&self, i: usize) -> bool {
         self.bits.get(i).unwrap()
     }
 

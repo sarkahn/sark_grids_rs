@@ -1,4 +1,4 @@
-//! Simple utility for drawing static shapes to the terminal.
+//! Simple utility for printing an ascii grid.
 pub mod canvas;
 
 pub use canvas::Canvas;

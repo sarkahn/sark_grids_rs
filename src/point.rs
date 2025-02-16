@@ -121,11 +121,20 @@ pub trait GridPoint: Clone + Copy {
     }
 
     /// The [taxicab distance](https://en.wikipedia.org/wiki/Taxicab_geometry)
-    /// between two grid points.
+    /// between two points on a four-way grid.
     #[inline]
     fn taxi_dist(self, other: impl GridPoint) -> usize {
         let d = (self.to_ivec2() - other.to_ivec2()).abs();
         (d.x + d.y) as usize
+    }
+
+    /// The [king's distance](https://en.wikipedia.org/wiki/Chebyshev_distance)
+    /// between two points on an eight-way grid, assuming diagonal moves
+    /// cost the same as cardinal moves.
+    #[inline]
+    fn king_dist(self, other: impl GridPoint) -> usize {
+        let d = (self.to_ivec2() - other.to_ivec2()).abs();
+        d.x.max(d.y) as usize
     }
 
     /// Linearly interpolate between points a and b by the amount t.
@@ -153,6 +162,12 @@ pub trait GridPoint: Clone + Copy {
             p: self.to_ivec2(),
             arr: DIR_8,
         }
+    }
+
+    /// Whether or not the given point is cardinal (not diagonal) to this one.
+    #[inline]
+    fn is_cardinal(&self, other: impl GridPoint) -> bool {
+        self.to_ivec2().cmpeq(other.to_ivec2()).any()
     }
 }
 

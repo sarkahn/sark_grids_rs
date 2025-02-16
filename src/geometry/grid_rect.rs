@@ -683,9 +683,11 @@ pub trait PositionedGrid: SizedGrid {
 
 #[cfg(test)]
 mod tests {
+    use glam::IVec2;
+
     use crate::{geometry::grid_rect::PositionedGrid, util::Canvas, Pivot};
 
-    use super::GridRect;
+    use super::{GridRect, SizedGrid};
 
     #[test]
     fn rect_min_max() {
@@ -824,6 +826,21 @@ mod tests {
         assert_eq!([-4, 5], rect.pivot_point(Pivot::TopLeft).to_array());
         assert_eq!([5, 5], rect.pivot_point(Pivot::TopRight).to_array());
         assert_eq!([5, -4], rect.pivot_point(Pivot::BottomRight).to_array());
+    }
+
+    #[test]
+    fn iter_grid_points() {
+        let rect = GridRect::new([0, 0], [3, 3]);
+        let points: Vec<IVec2> = rect.iter_grid_points().collect();
+        assert_eq!([0, 0], points[0].to_array());
+        assert_eq!([1, 0], points[1].to_array());
+        assert_eq!([2, 0], points[2].to_array());
+        assert_eq!([0, 1], points[3].to_array());
+        assert_eq!([1, 1], points[4].to_array());
+        assert_eq!([2, 1], points[5].to_array());
+        assert_eq!([0, 2], points[6].to_array());
+        assert_eq!([1, 2], points[7].to_array());
+        assert_eq!([2, 2], points[8].to_array());
     }
 
     // #[test]
