@@ -1,11 +1,12 @@
+//! A simple data structure for storing values in a sparse 2d grid.
+
 use std::collections::BTreeMap;
 
 use glam::{IVec2, UVec2};
 
 use crate::{GridPoint, SizedGrid};
 
-/// A simple utility for storing data in a sparse grid, backed by
-/// a BTreeMap
+/// A simple data structure for storing values in a sparse 2d grid.
 pub struct SparseGrid<T> {
     data: BTreeMap<Cell, T>,
     size: UVec2,

@@ -1,3 +1,4 @@
+//! A trait for types representing the size of a rectangular 2d grid.
 use glam::{IVec2, UVec2, Vec2};
 
 /// A trait for types representing the size of a rectangular 2d grid.

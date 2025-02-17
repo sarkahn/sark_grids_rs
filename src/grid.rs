@@ -1,4 +1,4 @@
-//! A 2 dimensional grid that stores it's internal data in a `Vec`. The size of
+//! A rectangular grid that stores it's internal data in a `Vec`. The size of
 //! the grid is constant and elements cannot be removed, only changed. Provides
 //! very fast iteration and access speed.
 //!
@@ -30,7 +30,7 @@ use glam::{IVec2, UVec2};
 
 use crate::{geometry::GridRect, GridPoint, PositionedGrid, SizedGrid};
 
-/// A dense [SizedGrid] that stores it's elements in a [Vec].
+/// A data structure for storing a 2d sized grid of data.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Grid<T> {
     data: Vec<T>,
