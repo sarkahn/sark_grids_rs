@@ -1,3 +1,5 @@
+//! A rectangular grid of bit values for representing simple state across a large grid.
+
 use bit_vec::BitVec;
 use glam::UVec2;
 
@@ -88,52 +90,6 @@ impl BitGrid {
     pub fn bits_mut(&mut self) -> &mut BitVec {
         &mut self.bits
     }
-
-    // /// Perform an operation on the bits that overlap with the given grid.
-    // pub fn overlap_operation(&mut self, other: &BitGrid, operation: impl Fn(bool, bool) -> bool) {
-    //     let inner = self.rect.clipped_to(other.rect);
-    //     for y in inner.bottom()..=inner.top() {
-    //         let a = self.transform_wtl([inner.left(), y]);
-    //         let b = other.transform_wtl([inner.left(), y]);
-    //         let ai = self.transform_lti(a);
-    //         let bi = other.transform_lti(b);
-    //         for x in 0..inner.width() {
-    //             let a = self.bits.get(ai + x).unwrap();
-    //             let b = other.bits.get(bi + x).unwrap();
-    //             self.bits.set(ai + x, operation(a, b));
-    //         }
-    //     }
-    // }
-
-    // /// Perform an `or "a | b"` operation on any bits that overlap with the given grid.
-    // pub fn overlap_or(&mut self, other: &BitGrid) {
-    //     self.overlap_operation(other, |a, b| a | b);
-    // }
-
-    // /// Perform a `nor "!(a | b)"` operation on any bits that overlap with the given grid.
-    // pub fn overlap_nor(&mut self, other: &BitGrid) {
-    //     self.overlap_operation(other, |a, b| !(a | b));
-    // }
-
-    // /// Perform a `xor "a ^ b"` operation on any bits that overlap with the given grid.
-    // pub fn overlap_xor(&mut self, other: &BitGrid) {
-    //     self.overlap_operation(other, |a, b| a ^ b);
-    // }
-
-    // /// Perform an `xnor "a == b"` operation on any bits that overlap with the given grid.
-    // pub fn overlap_xnor(&mut self, other: &BitGrid) {
-    //     self.overlap_operation(other, |a, b| a == b);
-    // }
-
-    // /// Perform an `and "a & b"` operation on any bits that overlap with the given grid.
-    // pub fn overlap_and(&mut self, other: &BitGrid) {
-    //     self.overlap_operation(other, |a, b| a & b);
-    // }
-
-    // /// Perform a `nand "!(a & b)"` operation on any bits that overlap with the given grid.
-    // pub fn overlap_nand(&mut self, other: &BitGrid) {
-    //     self.overlap_operation(other, |a, b| !(a & b));
-    // }
 
     /// Returns true if any bits in the grid are set.
     pub fn any(&self) -> bool {

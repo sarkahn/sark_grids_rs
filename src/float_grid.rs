@@ -1,38 +1,31 @@
+//! A rectangular grid of float values with utility functions for performing operations
+//! across the grid.
+
 use std::ops::{Index, IndexMut};
 
-use glam::IVec2;
+use glam::UVec2;
 
-use crate::{GridPoint, GridRect, GridSize, PositionedGrid, SizedGrid};
+use crate::{GridPoint, GridRect, GridSize, SizedGrid};
 
 /// A rectangular grid of floating point values.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct FloatGrid {
     data: Vec<f32>,
-    rect: GridRect,
+    size: UVec2,
 }
 
 impl SizedGrid for FloatGrid {
     fn size(&self) -> glam::UVec2 {
-        self.rect.size
-    }
-}
-
-impl PositionedGrid for FloatGrid {
-    fn pos(&self) -> IVec2 {
-        self.rect.pos()
+        self.size
     }
 }
 
 impl FloatGrid {
-    pub fn new(position: impl GridPoint, size: impl GridSize) -> Self {
+    pub fn new(size: impl GridSize) -> Self {
         Self {
             data: vec![0.0; size.tile_count()],
-            rect: GridRect::new(position, size),
+            size: size.to_uvec2(),
         }
-    }
-
-    pub fn new_origin(size: impl GridSize) -> Self {
-        Self::new(IVec2::ZERO, size)
     }
 
     /// Set the value for a position.
@@ -79,28 +72,24 @@ impl FloatGrid {
         }
     }
 
-    /// Perform an operation on the values that overlap with the given grid.
-    pub fn overlap_apply_operation(
-        &mut self,
-        other: &FloatGrid,
-        operation: impl Fn(f32, f32) -> f32,
-    ) {
-        let inner = self.rect.clipped(other.rect);
-        for y in inner.bottom()..=inner.top() {
-            let a = self.transform_wtl([inner.left(), y]);
-            let b = other.transform_wtl([inner.left(), y]);
-            let ai = self.transform_lti(a);
-            let bi = other.transform_lti(b);
-            for x in 0..inner.width() {
-                let a = &mut self.data[ai + x];
-                let b = other.data[bi + x];
-                *a = operation(*a, b);
-            }
-        }
+    /// Iterate over a rectangular section of values.
+    pub fn iter_rect(&self, rect: GridRect) -> impl DoubleEndedIterator<Item = &f32> {
+        let iter = self
+            .data
+            .chunks(self.width())
+            .skip(rect.bottom() as usize)
+            .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter());
+
+        iter
     }
 
-    pub fn bounds(&self) -> GridRect {
-        self.rect
+    /// Iterate over a rectangular section of values.
+    pub fn iter_rect_mut(&mut self, rect: GridRect) -> impl DoubleEndedIterator<Item = &mut f32> {
+        let w = self.width();
+        self.data
+            .chunks_mut(w)
+            .skip(rect.bottom() as usize)
+            .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter_mut())
     }
 
     /// Reset all values in the [FloatGrid] to 0.
@@ -136,21 +125,5 @@ impl Index<usize> for FloatGrid {
 impl IndexMut<usize> for FloatGrid {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.data[index]
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::FloatGrid;
-
-    #[test]
-    fn overlap() {
-        let mut a = FloatGrid::new_origin([20, 20]);
-        let mut b = FloatGrid::new([10, 10], [10, 10]);
-        a.set_all(1.0);
-        b.set_all(10.0);
-        a.overlap_apply_operation(&b, |a, b| a + b);
-        assert_eq!(1.0, a.value([9, 9]));
-        assert_eq!(11.0, a.value([10, 10]));
     }
 }

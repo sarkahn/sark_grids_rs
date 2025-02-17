@@ -7,6 +7,7 @@ pub mod grid;
 pub mod pivot;
 pub mod point;
 pub mod size;
+pub mod sparse_grid;
 pub mod util;
 
 pub use bit_grid::BitGrid;
