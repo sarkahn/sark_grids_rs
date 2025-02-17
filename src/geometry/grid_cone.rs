@@ -171,10 +171,6 @@ mod test {
         for cone in cones {
             for p in cone {
                 canvas.put(p, '*');
-                for (i, p) in cone.corners().iter().enumerate() {
-                    let i = char::from_digit(i as u32, 10).unwrap();
-                    canvas.put(*p, i);
-                }
             }
         }
 
@@ -198,10 +194,6 @@ mod test {
         for cone in cones {
             for p in cone {
                 canvas.put(p, '*');
-                for (i, p) in cone.corners().iter().enumerate() {
-                    let i = char::from_digit(i as u32, 10).unwrap();
-                    canvas.put(*p, i);
-                }
             }
         }
 

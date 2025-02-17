@@ -196,10 +196,13 @@ impl<T> Grid<T> {
 
     /// Iterate over a rectangular section of grid elements along with their 2d positions.
     pub fn iter_rect(&self, rect: GridRect) -> impl Iterator<Item = (IVec2, &T)> {
-        rect.iter_rect_points().map(|p| {
-            let i = self.transform_lti(p);
-            (p, &self.data[i])
-        })
+        let w = self.width();
+        let iter = self
+            .data
+            .chunks(w)
+            .skip(rect.bottom() as usize)
+            .flat_map(move |tiles| tiles[rect.left() as usize..=rect.right() as usize].iter());
+        rect.iter_rect_points().zip(iter)
     }
 
     /// Iterate over a rectangular section of grid elements along with their 2d positions.

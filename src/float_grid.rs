@@ -4,6 +4,7 @@ use glam::IVec2;
 
 use crate::{GridPoint, GridRect, GridSize, PositionedGrid, SizedGrid};
 
+/// A rectangular grid of floating point values.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct FloatGrid {
     data: Vec<f32>,

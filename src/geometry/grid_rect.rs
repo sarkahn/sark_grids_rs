@@ -624,7 +624,8 @@ pub trait PositionedGrid: SizedGrid {
             && other.bottom() <= self.top()
     }
 
-    /// Iterate over each point of the [GridRect].
+    /// Iterate over each point of the [GridRect] starting from the bottom left
+    /// and increasing right and up.
     fn iter_rect_points(&self) -> GridRectIter {
         GridRectIter::new(GridRect::new(self.pos(), self.size()))
     }
@@ -647,7 +648,7 @@ pub trait PositionedGrid: SizedGrid {
             .take(self.width())
     }
 
-    /// Iterate over all the border tiles of the grid in clockwise order,
+    /// Iterate over all the border tiles of the [GridRect] in clockwise order,
     /// starting from the bottom left.
     fn iter_rect_border(&self) -> impl DoubleEndedIterator<Item = IVec2> {
         let left = self.iter_rect_column(0);
@@ -843,34 +844,32 @@ mod tests {
         assert_eq!([2, 2], points[8].to_array());
     }
 
-    // #[test]
-    // fn iter_border() {
-    //     let rect = GridRect::from_points([0, 0], [5, 5]);
-    //     let points: Vec<_> = rect.iter_rect_border().collect();
+    #[test]
+    fn iter_border() {
+        let rect = GridRect::from_points([0, 0], [5, 5]);
+        let points: Vec<_> = rect.iter_rect_border().map(|v| v.to_array()).collect();
 
-    //     let mut corners = rect.corners().into_iter();
-    //     assert!(corners.all(|p| points.contains(&p)));
-    //     assert_eq!(20, rect.iter_rect_border().count());
-
-    //     let rect = GridRect::from_points([-13, -13], [-9, -9]);
-    //     let points: Vec<_> = rect.iter_rect_border().collect();
-
-    //     let mut corners = rect.corners().into_iter();
-    //     assert!(corners.all(|p| points.contains(&p)));
-    //     assert_eq!(16, rect.iter_rect_border().count());
-    // }
-
-    // #[test]
-    // fn pivot_doesnt_overlap() {
-    //     let a = GridRect::from_pivot_point([5, 5], Pivot::TopRight);
-    //     let rects = [
-    //         GridRect::from_pivot_origin([3, 3], Pivot::BottomLeft),
-    //         GridRect::from_pivot_origin([7, 7], Pivot::BottomRight),
-    //         GridRect::from_pivot_origin([2, 2], Pivot::TopLeft),
-    //     ];
-    //     let overlap = rects.iter().any(|r| r.overlaps(a));
-    //     assert!(!overlap);
-    // }
+        assert_eq!([0, 0], points[0]);
+        assert_eq!([0, 1], points[1]);
+        assert_eq!([0, 2], points[2]);
+        assert_eq!([0, 3], points[3]);
+        assert_eq!([0, 4], points[4]);
+        assert_eq!([0, 5], points[5]);
+        assert_eq!([1, 5], points[6]);
+        assert_eq!([2, 5], points[7]);
+        assert_eq!([3, 5], points[8]);
+        assert_eq!([4, 5], points[9]);
+        assert_eq!([5, 5], points[10]);
+        assert_eq!([5, 4], points[11]);
+        assert_eq!([5, 3], points[12]);
+        assert_eq!([5, 2], points[13]);
+        assert_eq!([5, 1], points[14]);
+        assert_eq!([5, 0], points[15]);
+        assert_eq!([4, 0], points[16]);
+        assert_eq!([3, 0], points[17]);
+        assert_eq!([2, 0], points[18]);
+        assert_eq!([1, 0], points[19]);
+    }
 
     #[test]
     fn clipped() {
