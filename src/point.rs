@@ -1,4 +1,4 @@
-//! Traits for dealing with 2d points on a grid.
+//! A trait for types representing a 2d position on a grid.
 use super::{
     pivot::{Pivot, PivotedPoint},
     size::GridSize,
@@ -9,7 +9,7 @@ use super::direction::{DIR_4, DIR_8};
 
 /// A trait for types representing an integer point on a 2d grid.
 ///
-/// This trait is implemented for most 2d vector types such as [IVec2], [UVec2], [i32;2], etc
+/// This trait is implemented for most 2d vector types such as [IVec2], [UVec2], `[i32;2]``, etc
 pub trait GridPoint: Clone + Copy {
     fn xy(&self) -> IVec2;
 
