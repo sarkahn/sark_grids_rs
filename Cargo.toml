@@ -1,15 +1,17 @@
 [package]
 name = "sark_grids"
-version = "0.5.9"
+version = "0.6.0"
 edition = "2021"
 authors = ["sark"]
 homepage = "https://github.com/sarkahn/sark_grids_rs"
 repository = "https://github.com/sarkahn/sark_grids_rs"
 license = "MIT"
 readme = "README.md"
-keywords = ["2d", "grid", "sparse_grid"]
+keywords = ["2d", "grid", "geometry"]
 description = "A set of grids for storing and accessing data in a grid-like way."
 
 [dependencies]
-glam = "0.25"
-itertools = "0.12.1"
+glam = "0.29"
+bit-vec = "0.6.3"
+fixedbitset = "0.5.7"
+enum-ordinalize = "4.3.0"

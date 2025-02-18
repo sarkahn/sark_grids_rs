@@ -1,12 +1,11 @@
-//! Utility for handling circular shapes on a 2d grid.
 // https://www.redblobgames.com/grids/circle-drawing/
-use glam::{IVec2, Vec2};
+use glam::{IVec2, UVec2, Vec2};
 
-use crate::GridPoint;
+use crate::{GridPoint, GridShape};
 
-use super::{grid_rect::GridRectIter, GridRect, GridShape};
+use super::{grid_rect::GridRectIter, GridRect};
 
-/// A filled circle. Points within the circle can be iterator over.
+/// A filled circle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridCircle {
     pub center: IVec2,
@@ -16,7 +15,7 @@ pub struct GridCircle {
 impl GridCircle {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
         GridCircle {
-            center: center.as_ivec2(),
+            center: center.to_ivec2(),
             radius,
         }
     }
@@ -26,7 +25,7 @@ impl GridCircle {
         Self::new([0, 0], radius)
     }
 
-    /// Create an outlined circle with this circle's position and size.
+    /// Create an outlined circle with this circle's center and radius.
     pub fn outline(&self) -> GridCircleOutline {
         GridCircleOutline::new(self.center, self.radius)
     }
@@ -40,28 +39,9 @@ impl GridCircle {
 
     #[inline]
     pub fn contains(&self, p: impl GridPoint) -> bool {
-        let p = p.as_ivec2() - self.center;
+        let p = p.to_ivec2() - self.center;
         let dist_sq = p.x * p.x + p.y * p.y;
         dist_sq <= (self.radius * self.radius) as i32
-    }
-}
-
-impl GridShape for GridCircle {
-    fn iter(&self) -> super::GridShapeIterator {
-        super::GridShapeIterator::Circle(self.into_iter())
-    }
-
-    fn pos(&self) -> IVec2 {
-        self.center
-    }
-
-    fn set_pos(&mut self, pos: IVec2) {
-        self.center = pos;
-    }
-
-    fn bounds(&self) -> GridRect {
-        let r = self.radius * 2;
-        GridRect::new(self.center, [r, r])
     }
 }
 
@@ -74,9 +54,9 @@ pub struct GridCircleIter {
 
 impl GridCircleIter {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
-        let c = center.as_vec2() + 0.5;
+        let c = center.to_vec2() + 0.5;
         let r = radius as f32;
-        let rect = GridRect::origin(IVec2::splat(radius as i32 * 2 + 1));
+        let rect = GridRect::center_origin(UVec2::splat(radius as u32 * 2 + 1));
         GridCircleIter {
             rect_iter: rect.into_iter(),
             center: c,
@@ -114,7 +94,7 @@ impl IntoIterator for GridCircle {
     }
 }
 
-/// A hollow circle.
+/// A hollow circle of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridCircleOutline {
     center: IVec2,
@@ -124,7 +104,7 @@ pub struct GridCircleOutline {
 impl GridCircleOutline {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
         GridCircleOutline {
-            center: center.as_ivec2(),
+            center: center.to_ivec2(),
             radius,
         }
     }
@@ -150,25 +130,6 @@ pub struct GridCircleOutlineIter {
     curr: usize,
 }
 
-impl GridShape for GridCircleOutline {
-    fn iter(&self) -> super::GridShapeIterator {
-        super::GridShapeIterator::CircleOutline(self.into_iter())
-    }
-
-    fn pos(&self) -> IVec2 {
-        self.center
-    }
-
-    fn set_pos(&mut self, pos: IVec2) {
-        self.center = pos;
-    }
-
-    fn bounds(&self) -> GridRect {
-        let r = self.radius * 2;
-        GridRect::new(self.center, [r, r])
-    }
-}
-
 impl GridCircleOutlineIter {
     pub fn new(center: impl GridPoint, radius: usize) -> Self {
         let radius = radius as f32 + 0.5;
@@ -176,7 +137,7 @@ impl GridCircleOutlineIter {
 
         GridCircleOutlineIter {
             radius,
-            center: center.as_ivec2(),
+            center: center.to_ivec2(),
             r: 0,
             end,
             points: Default::default(),
@@ -226,6 +187,26 @@ impl IntoIterator for GridCircleOutline {
     }
 }
 
+impl GridShape for GridCircle {
+    fn iter(&self) -> crate::GridShapeIterator {
+        crate::GridShapeIterator::Circle(GridCircleIter::new(self.center, self.radius))
+    }
+
+    fn pos(&self) -> IVec2 {
+        self.center
+    }
+
+    fn set_pos(&mut self, pos: IVec2) {
+        self.center = pos;
+    }
+
+    fn bounds(&self) -> GridRect {
+        let min = self.center - self.radius as i32;
+        let max = min + self.radius as i32 * 2;
+        GridRect::from_points(min, max)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::util::Canvas;
@@ -245,9 +226,28 @@ mod tests {
 
             let filled_circle = GridCircle::new([size / 2 + 2, 0], size);
 
-            for p in filled_circle {
-                canvas.put(p, '*');
-            }
+            canvas.put_shape(filled_circle, '*');
+
+            canvas.print();
+            println!();
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn circle_rects() {
+        for radius in 1..2 {
+            let circle = GridCircle::new([-(radius as i32) * 2, 0], radius);
+            let mut rect = circle.bounds();
+            let radius = radius as i32;
+
+            rect.pos.x = radius + 2;
+
+            let mut canvas = Canvas::new([radius * 2 + 10, radius * 2 + 2]);
+
+            canvas.put_shape(circle, '*');
+            canvas.put_shape(rect, 'r');
+            canvas.put([0, 0], 'O');
 
             canvas.print();
             println!();

@@ -1,23 +1,22 @@
-use glam::IVec2;
+use glam::{IVec2, UVec2};
 
 use crate::{
-    directions::{DOWN_LEFT, DOWN_RIGHT, UP, UP_LEFT, UP_RIGHT},
-    GridPoint,
+    direction::{DOWN_LEFT, DOWN_RIGHT, UP, UP_LEFT, UP_RIGHT},
+    GridPoint, GridRect, GridShape,
 };
 
-use super::{GridRect, GridShape};
-
+/// A diamond of points on a 2d grid.
 #[derive(Default, Clone, Debug, Copy, PartialEq, Eq)]
 pub struct GridDiamond {
     pub pos: IVec2,
-    pub size: usize,
+    pub radius: usize,
 }
 
 impl GridDiamond {
     pub fn new(pos: impl GridPoint, size: usize) -> Self {
         Self {
-            pos: pos.as_ivec2(),
-            size,
+            pos: pos.to_ivec2(),
+            radius: size,
         }
     }
 
@@ -41,8 +40,8 @@ pub struct GridDiamondIter {
 impl GridDiamondIter {
     pub fn new(pos: impl GridPoint, size: usize) -> Self {
         Self {
-            origin: pos.as_ivec2(),
-            p: pos.as_ivec2(),
+            origin: pos.to_ivec2(),
+            p: pos.to_ivec2(),
             layer: 0,
             i: -1,
             dir_index: -1,
@@ -81,12 +80,12 @@ impl IntoIterator for GridDiamond {
     type IntoIter = GridDiamondIter;
 
     fn into_iter(self) -> Self::IntoIter {
-        GridDiamondIter::new(self.pos, self.size)
+        GridDiamondIter::new(self.pos, self.radius)
     }
 }
 
 impl GridShape for GridDiamond {
-    fn iter(&self) -> super::GridShapeIterator {
+    fn iter(&self) -> crate::GridShapeIterator {
         super::GridShapeIterator::Diamond(self.into_iter())
     }
 
@@ -98,9 +97,8 @@ impl GridShape for GridDiamond {
         self.pos = pos;
     }
 
-    fn bounds(&self) -> GridRect {
-        let size = self.size * 2 + 1;
-        GridRect::new(self.pos, [size, size])
+    fn bounds(&self) -> crate::GridRect {
+        GridRect::from_center_size(self.pos, UVec2::splat(self.radius as u32 * 2 + 1))
     }
 }
 
@@ -112,14 +110,12 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn draw() {
+    fn draw_diamonds() {
         for size in 0..10 {
             let diamond = GridDiamond::origin(size);
             let origin = diamond.pos;
             let mut canvas = Canvas::new([size * 2 + 1, size * 2 + 1]);
-            for p in diamond {
-                canvas.put(p, '*');
-            }
+            canvas.put_shape(diamond, '*');
             canvas.put(origin, 'o');
 
             canvas.print();

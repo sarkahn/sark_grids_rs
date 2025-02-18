@@ -1,14 +1,12 @@
-//! Utility for handlines lines on a 2d grid.
-use std::ops::Sub;
-
 // https://www.redblobgames.com/grids/line-drawing.html
 use glam::IVec2;
+use std::ops::Sub;
 
 use crate::GridPoint;
 
 use super::{GridRect, GridShape};
 
-/// A line of points on a grid.
+/// A line of points on a 2d grid.
 #[derive(Default, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct GridLine {
     pub start: IVec2,
@@ -20,8 +18,8 @@ impl GridLine {
     /// the final point on the line.
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
         GridLine {
-            start: start.as_ivec2(),
-            end: end.as_ivec2(),
+            start: start.to_ivec2(),
+            end: end.to_ivec2(),
         }
     }
 
@@ -68,8 +66,8 @@ pub struct GridLineIter {
 
 impl GridLineIter {
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
-        let start = start.as_ivec2();
-        let end = end.as_ivec2();
+        let start = start.to_ivec2();
+        let end = end.to_ivec2();
         GridLineIter {
             start,
             end,
@@ -133,8 +131,8 @@ impl GridLineOrtho {
     /// the final point on the line.
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> Self {
         Self {
-            start: start.as_ivec2(),
-            end: end.as_ivec2(),
+            start: start.to_ivec2(),
+            end: end.to_ivec2(),
         }
     }
 
@@ -176,8 +174,8 @@ pub struct GridLineOrthoIter {
 
 impl GridLineOrthoIter {
     pub fn new(start: impl GridPoint, end: impl GridPoint) -> GridLineOrthoIter {
-        let end = end.as_ivec2();
-        let start = start.as_ivec2();
+        let end = end.to_ivec2();
+        let start = start.to_ivec2();
         let d = end - start;
         let n = d.abs();
         let sign = d.signum();
@@ -257,7 +255,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn line_orthogonal() {
+    fn line_ortho_x() {
         let mut canvas = Canvas::new([11, 11]);
         let lines = [
             GridLineOrtho::new([0, 0], [4, 4]),
@@ -265,8 +263,8 @@ mod tests {
             GridLineOrtho::new([0, 0], [-4, -4]),
             GridLineOrtho::new([0, 0], [4, -4]),
         ];
-        for p in lines.iter().flat_map(|l| l.iter()) {
-            canvas.put(p, '*');
+        for line in lines {
+            canvas.put_shape(line, '*');
         }
         canvas.print();
     }
