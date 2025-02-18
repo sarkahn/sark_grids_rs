@@ -27,7 +27,9 @@ impl GridRect {
         Self::from_center_size([0, 0], size)
     }
 
-    /// Create a [GridRect] from two points in space.
+    /// Create a [GridRect] from two points in space. These points define
+    /// the corners of the rect, meaning they will both be contained inside the
+    /// rect.
     pub fn from_points(a: impl GridPoint, b: impl GridPoint) -> Self {
         let min = a.min(b);
         let max = a.max(b);
@@ -242,10 +244,13 @@ impl GridRect {
         self.bottom_left() + pivot.pivot_position(self.size)
     }
 
-    /// Retrieve a point in the rect from the perspective of the given pivot.
-    pub fn pivoted_point(&self, pivot: Pivot, point: impl Into<IVec2>) -> IVec2 {
+    /// Retrieve a transformed point from a local pivot position.
+    pub fn pivoted_point(&self, xy: impl Into<PivotedPoint>) -> IVec2 {
+        let xy: PivotedPoint = xy.into();
+        let pivot = xy.pivot.unwrap_or(Pivot::BottomLeft);
+        let xy = xy.point;
         let origin = self.pivot_point(pivot);
-        origin + (point.into() * pivot.axis())
+        origin + (xy * pivot.axis())
     }
 
     /// Check if a given point lies inside the rect
@@ -671,9 +676,12 @@ pub trait PositionedGrid: SizedGrid {
     }
 
     /// Retrieve a point in the grid from the perspective of the given pivot.
-    fn pivoted_point(&self, pivot: Pivot, point: impl GridPoint) -> IVec2 {
+    fn pivoted_point(&self, point: impl Into<PivotedPoint>) -> IVec2 {
+        let point: PivotedPoint = point.into();
+        let pivot = point.pivot.unwrap_or(Pivot::BottomLeft);
+        let point = point.point;
         let origin = self.pivot_point(pivot);
-        origin + (point.to_ivec2() * pivot.axis())
+        origin + (point * pivot.axis())
     }
 
     /// Transform a world point to this grid's local coordinates
@@ -686,7 +694,7 @@ pub trait PositionedGrid: SizedGrid {
 mod tests {
     use glam::IVec2;
 
-    use crate::{geometry::grid_rect::PositionedGrid, util::Canvas, Pivot};
+    use crate::{geometry::grid_rect::PositionedGrid, util::Canvas, GridPoint, Pivot};
 
     use super::{GridRect, SizedGrid};
 
@@ -884,5 +892,75 @@ mod tests {
         let clipped = a.clipped(c);
         assert_eq!([4, 5], clipped.min().to_array());
         assert_eq!([7, 10], clipped.max().to_array());
+    }
+
+    #[test]
+    fn pivot_point() {
+        let rect = GridRect::from_points([0, 0], [5, 5]);
+        assert_eq!([0, 0], rect.pivot_point(Pivot::BottomLeft).to_array());
+        assert_eq!([0, 5], rect.pivot_point(Pivot::TopLeft).to_array());
+        assert_eq!([5, 5], rect.pivot_point(Pivot::TopRight).to_array());
+        assert_eq!([5, 0], rect.pivot_point(Pivot::BottomRight).to_array());
+
+        let rect = GridRect::from_points([0, 0], [6, 6]);
+        assert_eq!([0, 0], rect.pivot_point(Pivot::BottomLeft).to_array());
+        assert_eq!([0, 6], rect.pivot_point(Pivot::TopLeft).to_array());
+        assert_eq!([6, 6], rect.pivot_point(Pivot::TopRight).to_array());
+        assert_eq!([6, 0], rect.pivot_point(Pivot::BottomRight).to_array());
+
+        let rect = GridRect::from_points([-5, -5], [5, 5]);
+        assert_eq!([-5, -5], rect.pivot_point(Pivot::BottomLeft).to_array());
+        assert_eq!([-5, 5], rect.pivot_point(Pivot::TopLeft).to_array());
+        assert_eq!([5, 5], rect.pivot_point(Pivot::TopRight).to_array());
+        assert_eq!([5, -5], rect.pivot_point(Pivot::BottomRight).to_array());
+
+        let rect = GridRect::from_points([-4, -4], [5, 5]);
+        assert_eq!([-4, -4], rect.pivot_point(Pivot::BottomLeft).to_array());
+        assert_eq!([-4, 5], rect.pivot_point(Pivot::TopLeft).to_array());
+        assert_eq!([5, 5], rect.pivot_point(Pivot::TopRight).to_array());
+        assert_eq!([5, -4], rect.pivot_point(Pivot::BottomRight).to_array());
+    }
+
+    #[test]
+    fn pivoted_point() {
+        let rect = GridRect::from_points([0, 0], [5, 5]);
+        assert_eq!(
+            [1, 1],
+            rect.pivoted_point([1, 1].pivot(Pivot::BottomLeft))
+                .to_array()
+        );
+        assert_eq!(
+            [1, 4],
+            rect.pivoted_point([1, 1].pivot(Pivot::TopLeft)).to_array()
+        );
+        assert_eq!(
+            [4, 4],
+            rect.pivoted_point([1, 1].pivot(Pivot::TopRight)).to_array()
+        );
+        assert_eq!(
+            [4, 1],
+            rect.pivoted_point([1, 1].pivot(Pivot::BottomRight))
+                .to_array()
+        );
+
+        let rect = GridRect::from_points([-5, -4], [3, 3]);
+        assert_eq!(
+            [-4, -3],
+            rect.pivoted_point([1, 1].pivot(Pivot::BottomLeft))
+                .to_array()
+        );
+        assert_eq!(
+            [-4, 2],
+            rect.pivoted_point([1, 1].pivot(Pivot::TopLeft)).to_array()
+        );
+        assert_eq!(
+            [2, 2],
+            rect.pivoted_point([1, 1].pivot(Pivot::TopRight)).to_array()
+        );
+        assert_eq!(
+            [2, -3],
+            rect.pivoted_point([1, 1].pivot(Pivot::BottomRight))
+                .to_array()
+        );
     }
 }

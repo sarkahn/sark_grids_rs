@@ -1,4 +1,5 @@
 //! Utilities for dealing with data, points and shapes on a 2d grid.
+
 pub mod bit_grid;
 pub mod direction;
 pub mod float_grid;
