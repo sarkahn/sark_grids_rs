@@ -133,12 +133,21 @@ impl BitGrid {
         self.bits.clear();
     }
 
+    /// Iterate over each bit in the grid row by row, starting from the bottom
+    /// left
     pub fn iter(&self) -> impl Iterator<Item = bool> + '_ {
         self.bits.iter()
     }
 
+    /// An iterator that yields each 2d index with it's corresponding bit.
     pub fn iter_xy(&self) -> impl Iterator<Item = (IVec2, bool)> + '_ {
         self.iter_grid_points().map(move |p| (p, self.get(p)))
+    }
+
+    /// Iterate over a rectangular subsection of the grid. Will panic if any
+    /// part of the rect is out of bounds.
+    pub fn iter_rect(&self, rect: GridRect) -> impl Iterator<Item = (IVec2, bool)> + '_ {
+        rect.iter_points().map(move |p| (p, self.get(p)))
     }
 
     /// Create a new BitGrid from a rectangular area within this grid.
@@ -148,6 +157,15 @@ impl BitGrid {
             grid.set(p, self.get(p));
         }
         grid
+    }
+}
+
+impl IntoIterator for BitGrid {
+    type Item = bool;
+    type IntoIter = bit_vec::IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.bits.into_iter()
     }
 }
 
@@ -199,21 +217,4 @@ mod tests {
         assert!(points[grid.transform_lti([9, 2])].1);
         assert!(points[grid.transform_lti([9, 4])].1);
     }
-
-    // #[test]
-    // fn overlap() {
-    //     let mut grid = BitGrid::new([0, 0], [5, 6]);
-    //     let other = BitGrid::new([2, 3], [3, 3]).with_value(true);
-    //     grid.overlap_xor(&other);
-    //     for p in other.rect.iter_rect_points() {
-    //         assert!(grid.get(p));
-    //     }
-
-    //     grid.clear();
-    //     grid.set([3, 4], true);
-    //     grid.overlap_and(&other);
-
-    //     assert!(!grid.get([2, 3]));
-    //     assert!(grid.get([3, 4]));
-    // }
 }

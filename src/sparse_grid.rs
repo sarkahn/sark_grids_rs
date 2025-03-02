@@ -1,6 +1,9 @@
 //! A simple data structure for storing values in a sparse 2d grid.
 
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    ops::{Index, IndexMut},
+};
 
 use glam::{IVec2, UVec2};
 
@@ -64,5 +67,22 @@ impl Ord for Cell {
 impl PartialOrd for Cell {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl<T, P: GridPoint> Index<P> for SparseGrid<T> {
+    type Output = T;
+
+    fn index(&self, index: P) -> &Self::Output {
+        self.get(index).unwrap()
+    }
+}
+
+impl<T, P: GridPoint> IndexMut<P> for SparseGrid<T>
+where
+    T: Default,
+{
+    fn index_mut(&mut self, index: P) -> &mut Self::Output {
+        self.data.entry(Cell(index.to_ivec2())).or_default()
     }
 }

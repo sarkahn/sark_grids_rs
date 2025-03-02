@@ -395,44 +395,6 @@ impl std::fmt::Display for GridRect {
     }
 }
 
-// /// The corner points of a [GridRect]. Corners can be accessed by name, index,
-// /// or iterated over.
-// #[derive(Default, Debug, Clone, Copy)]
-// pub struct Corners(pub [IVec2; 4]);
-
-// impl Corners {
-//     pub fn bottom_left(&self) -> IVec2 {
-//         self.0[0]
-//     }
-//     pub fn top_left(&self) -> IVec2 {
-//         self.0[1]
-//     }
-//     pub fn top_right(&self) -> IVec2 {
-//         self.0[2]
-//     }
-//     pub fn bottom_right(&self) -> IVec2 {
-//         self.0[3]
-//     }
-// }
-
-// impl Deref for Corners {
-//     type Target = [IVec2; 4];
-
-//     fn deref(&self) -> &Self::Target {
-//         &self.0
-//     }
-// }
-
-// impl IntoIterator for Corners {
-//     type Item = IVec2;
-
-//     type IntoIter = core::array::IntoIter<IVec2, 4>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.0.into_iter()
-//     }
-// }
-
 impl GridShape for GridRect {
     fn iter(&self) -> super::GridShapeIterator {
         super::GridShapeIterator::Rect(self.into_iter())

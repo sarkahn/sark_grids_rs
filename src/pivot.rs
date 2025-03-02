@@ -161,4 +161,10 @@ mod tests {
         let pp = [0, 0].pivot(Pivot::BottomRight);
         assert_eq!([8, 0], pp.calculate([9, 9]).to_array());
     }
+
+    #[test]
+    fn center_negative() {
+        let p = [-5, -5].pivot(Pivot::Center);
+        assert_eq!([0, 0], p.calculate([10, 10]).to_array());
+    }
 }

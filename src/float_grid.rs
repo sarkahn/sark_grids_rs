@@ -3,7 +3,7 @@
 
 use std::ops::{Index, IndexMut};
 
-use glam::UVec2;
+use glam::{IVec2, UVec2};
 
 use crate::{GridPoint, GridRect, GridSize, SizedGrid};
 
@@ -47,6 +47,12 @@ impl FloatGrid {
     pub fn get_value(&self, xy: impl GridPoint) -> Option<f32> {
         let i = xy.get_index(self.size())?;
         Some(self.data[i])
+    }
+
+    #[inline]
+    pub fn get_value_mut(&mut self, xy: impl GridPoint) -> Option<&mut f32> {
+        let i = xy.get_index(self.size())?;
+        Some(&mut self.data[i])
     }
 
     pub fn value_mut(&mut self, xy: impl GridPoint) -> &mut f32 {
@@ -95,6 +101,16 @@ impl FloatGrid {
     /// Reset all values in the [FloatGrid] to 0.
     pub fn clear(&mut self) {
         self.data.fill(0.0);
+    }
+
+    pub fn iter_xy(&self) -> impl Iterator<Item = (IVec2, f32)> + '_ {
+        self.iter_grid_points()
+            .enumerate()
+            .map(move |(i, p)| (p, self[i]))
+    }
+
+    pub fn iter_xy_muy(&mut self) -> impl Iterator<Item = (IVec2, &mut f32)> + '_ {
+        self.iter_grid_points().zip(self.data.iter_mut())
     }
 }
 
